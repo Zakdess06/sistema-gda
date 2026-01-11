@@ -1,21 +1,14 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
+from app.views.main_window import MainWindow
+from pathlib import Path
 
-
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-
-        self.setWindowTitle("Sistema GDA - Gestión de Almacén")
-        self.setMinimumSize(1000, 600)
-        self.setWindowState(Qt.WindowMaximized)
 
 
 def main():
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.show()
+    window.showMaximized()
     sys.exit(app.exec())
 
 
