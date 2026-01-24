@@ -89,3 +89,15 @@ QPushButton#ActionButton:hover {
 QPushButton#ActionButton:pressed {
     background-color: #1f1f1f;
 }
+
+QLineEdit {
+    background-color: #2a2a2a;
+    color: white;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 16px;
+}
+QLineEdit:focus {
+    border: 1px solid #0094C2;
+}
