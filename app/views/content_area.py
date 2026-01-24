@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QWidget, QStackedLayout, QLabel
+from app.views.almacen_view import AlmacenView
 
 
 class ContentArea(QWidget):
@@ -7,19 +8,23 @@ class ContentArea(QWidget):
 
         self.layout = QStackedLayout(self)
 
+        # Vistas reales
         self.dashboard = QLabel("Dashboard")
-        self.almacen = QLabel("Almacén")
-        self.entradas = QLabel("Entradas")
-        self.salidas = QLabel("Salidas")
+        self.dashboard.setStyleSheet("font-size: 24px;")
 
-        for w in [
-            self.dashboard,
-            self.almacen,
-            self.entradas,
-            self.salidas
-        ]:
-            w.setStyleSheet("font-size: 24px;")
-            self.layout.addWidget(w)
+        self.almacen = AlmacenView()   
+
+        self.entradas = QLabel("Entradas")
+        self.entradas.setStyleSheet("font-size: 24px;")
+
+        self.salidas = QLabel("Salidas")
+        self.salidas.setStyleSheet("font-size: 24px;")
+
+        # Agregar al stack
+        self.layout.addWidget(self.dashboard)
+        self.layout.addWidget(self.almacen)
+        self.layout.addWidget(self.entradas)
+        self.layout.addWidget(self.salidas)
 
     def show_dashboard(self):
         self.layout.setCurrentWidget(self.dashboard)
