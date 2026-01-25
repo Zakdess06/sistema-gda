@@ -14,7 +14,6 @@ class Sidebar(QWidget):
         layout.setSpacing(6)
         layout.setContentsMargins(10, 10, 10, 10)
 
-        
         self.btn_dashboard = QPushButton("Dashboard")
         self.btn_almacen = QPushButton("Almacén")
         self.btn_entradas = QPushButton("Entradas")
@@ -40,8 +39,9 @@ class Sidebar(QWidget):
             btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             layout.addWidget(btn)
 
-        
+        # CONEXIONES
         self.btn_dashboard.clicked.connect(self.content.show_dashboard)
         self.btn_almacen.clicked.connect(self.content.show_almacen)
         self.btn_entradas.clicked.connect(self.content.show_entradas)
         self.btn_salidas.clicked.connect(self.content.show_salidas)
+        self.btn_herramientas.clicked.connect(self.content.show_herramientas)

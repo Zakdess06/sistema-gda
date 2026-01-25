@@ -29,6 +29,7 @@ class Store:
     def __init__(self):
         self.almacen: Dict[str, AlmacenItem] = {}
         self.entradas: List[Entrada] = []
+        self.herramientas = {}
 
     def seed_demo(self):
         demo = [

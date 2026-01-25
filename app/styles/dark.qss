@@ -7,14 +7,13 @@
 QPushButton#SidebarButton {
     background-color: #2a2a2a;
     color: #ffffff;
-    font-size: 38px;          
-    font-weight: 850;         
+    font-size: 38px;
+    font-weight: 850;
     border: none;
     border-radius: 10px;
     padding: 14px 18px;
     text-align: left;
 }
-
 
 QPushButton#SidebarButton:hover {
     background-color: #353535;
@@ -26,13 +25,13 @@ QPushButton#SidebarButton:pressed {
 
 /* ===== TÍTULOS ===== */
 #TituloVista {
-    font-size: 36px;          
+    font-size: 36px;
     font-weight: 700;
     color: white;
 }
 
 #TitleLabel {
-    font-size: 42px;          
+    font-size: 42px;
     font-weight: 700;
     margin-bottom: 8px;
 }
@@ -74,7 +73,6 @@ QPushButton#ActionButton {
     font-weight: 600;
     background-color: #2d2d2d;
     color: white;
-    transition: background-color 0.2s ease;
 }
 
 QPushButton#ActionButton:hover {
@@ -96,7 +94,6 @@ QLineEdit#ActionSearch {
     background-color: #2a2a2a;
     color: white;
     border: 1px solid #3a3a3a;
-    transition: background-color 0.2s ease, border 0.2s ease;
 }
 
 QLineEdit#ActionSearch:hover {
@@ -120,4 +117,24 @@ QLineEdit {
 
 QLineEdit:focus {
     border: 1px solid #0094C2;
+}
+
+/* ===== HERRAMIENTAS ===== */
+#HerramientasContainer {
+    background-color: #1e1e1e;
+    border-radius: 14px;
+    padding: 18px;
+}
+
+#HerramientasForm {
+    background-color: #252525;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+#HerramientasTitulo {
+    font-size: 34px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 12px;
 }
