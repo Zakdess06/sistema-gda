@@ -1,4 +1,4 @@
-/* ===== SIDEBAR ===== */
+/*  SIDEBAR  */
 #Sidebar {
     background-color: #1e1e1e;
 }
@@ -25,7 +25,7 @@ QPushButton#SidebarButton:pressed {
     background-color: #3f3f3f;
 }
 
-/* ===== TÍTULOS ===== */
+/*  TÍTULOS  */
 #TituloVista {
     font-size: 36px;          
     font-weight: 700;
@@ -90,6 +90,7 @@ QPushButton#ActionButton:pressed {
     background-color: #1f1f1f;
 }
 
+
 /* ===== BUSCADOR ===== */
 QLineEdit#ActionSearch {
     min-height: 42px;
@@ -113,5 +114,17 @@ QLineEdit#ActionSearch:hover {
 
 QLineEdit#ActionSearch:focus {
     background-color: #1f1f1f;
+}
+
+QLineEdit {
+    background-color: #2a2a2a;
+    color: white;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 16px;
+}
+QLineEdit:focus {
+    border: 1px solid #0094C2;
 }
 

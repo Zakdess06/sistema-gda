@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from app.core.store import store
+
 
 # =========================
 # Diálogo de producto
@@ -79,14 +81,22 @@ class AlmacenView(QWidget):
     def __init__(self):
         super().__init__()
 
+<<<<<<< HEAD
         main = QVBoxLayout(self)
         main.setSpacing(16)
 
         # Título
+=======
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(18)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+
+>>>>>>> feature/entradas
         title = QLabel("Almacén")
         title.setObjectName("TitleLabel")
         main.addWidget(title)
 
+<<<<<<< HEAD
         # Barra superior
         top = QHBoxLayout()
 
@@ -94,6 +104,15 @@ class AlmacenView(QWidget):
         self.search = QLineEdit()
         self.search.setPlaceholderText("Buscar producto...")
         self.search.textChanged.connect(self.buscar)
+=======
+        top_bar = QHBoxLayout()
+        top_bar.addStretch()
+
+        btn_new = QPushButton("+ Nueva pieza")
+        btn_edit = QPushButton("Editar")
+        btn_delete = QPushButton("Eliminar")
+        btn_search = QPushButton("Buscar")
+>>>>>>> feature/entradas
 
         self.search.setStyleSheet("""
         QLineEdit {
@@ -109,6 +128,7 @@ class AlmacenView(QWidget):
             border: 2px solid #0094C2;
         }
 
+<<<<<<< HEAD
         QLineEdit::placeholder {
             color: #9a9a9a;
         }
@@ -206,3 +226,31 @@ class AlmacenView(QWidget):
         self.table.insertRow(r)
         for c, v in enumerate(data):
             self.table.setItem(r, c, QTableWidgetItem(v))
+=======
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels([
+            "Partida", "Descripción", "Cantidad", "Ubicación", "Proveedor"
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setFixedHeight(48)
+        self.table.verticalHeader().setDefaultSectionSize(44)
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+
+        main_layout.addWidget(self.table)
+
+        self.refresh()
+
+    def refresh(self):
+        items = list(store.almacen.values())
+        self.table.setRowCount(len(items))
+
+        for row, item in enumerate(items):
+            vals = [item.partida, item.descripcion, str(item.cantidad), item.ubicacion, item.proveedor]
+            for col, value in enumerate(vals):
+                cell = QTableWidgetItem(value)
+                if col == 2:
+                    cell.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, col, cell)
+>>>>>>> feature/entradas
