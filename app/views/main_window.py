@@ -1,8 +1,15 @@
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import (
+    QMainWindow, QWidget, QHBoxLayout, QStackedWidget
+)
+
 from app.views.sidebar import Sidebar
-from app.views.topbar import TopBar
-from app.views.content_area import ContentArea
-from pathlib import Path
+from app.views.dashboard_view import DashboardView
+from app.views.almacen_view import AlmacenView
+from app.views.entradas_view import EntradasView
+from app.views.salidas_view import SalidasView
+from app.views.herramienta_view import HerramientasView
+from app.views.reportes_view import ReportesView
+from app.views.configuracion_view import ConfiguracionView
 
 
 class MainWindow(QMainWindow):
@@ -12,28 +19,38 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Sistema GDA")
         self.resize(1200, 700)
 
-        central = QWidget()
-        main_layout = QVBoxLayout(central)
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        main_layout = QHBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        topbar = TopBar()
+        # Sidebar
+        self.sidebar = Sidebar()
+        main_layout.addWidget(self.sidebar)
 
-        content_layout = QHBoxLayout()
+        # Stack de vistas
+        self.stack = QStackedWidget()
+        main_layout.addWidget(self.stack)
 
-        content = ContentArea()
-        sidebar = Sidebar(content)
+        # Vistas
+        self.views = {
+            "dashboard": DashboardView(),
+            "almacen": AlmacenView(),
+            "entradas": EntradasView(),
+            "salidas": SalidasView(),
+            "herramientas": HerramientasView(),
+            "reportes": ReportesView(),
+            "configuracion": ConfiguracionView(),
+        }
 
-        content_layout.addWidget(sidebar)
-        content_layout.addWidget(content)
+        for view in self.views.values():
+            self.stack.addWidget(view)
 
-        main_layout.addWidget(topbar)
-        main_layout.addLayout(content_layout)
+        self.sidebar.view_changed.connect(self.change_view)
 
-        self.setCentralWidget(central)
-        
-        self.load_styles()
+        self.change_view("dashboard")
 
-    def load_styles(self):
-        qss_path = Path(__file__).resolve().parent.parent / "styles" / "dark.qss"
-        with open(qss_path, "r", encoding="utf-8") as f:
-            self.setStyleSheet(f.read())
+    def change_view(self, view_name):
+        if view_name in self.views:
+            self.stack.setCurrentWidget(self.views[view_name])

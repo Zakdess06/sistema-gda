@@ -1,153 +1,112 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QTableWidget, QTableWidgetItem,
-    QHeaderView, QLineEdit, QMessageBox
+    QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
+    QLineEdit, QPushButton, QMessageBox,
+    QTableWidget, QTableWidgetItem
 )
-from PySide6.QtCore import Qt
 
-from app.core.store import store
-from app.views.herramienta_dialog import HerramientaDialog
+from app.core.store import store, Herramienta
 
 
-class HerramientaView(QWidget):
+class HerramientasView(QWidget):
     def __init__(self):
         super().__init__()
 
-        main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(16)
-        main_layout.setContentsMargins(20, 20, 20, 20)
+        layout = QVBoxLayout(self)
 
-        # Título
-        title = QLabel("Herramientas")
-        title.setObjectName("TitleLabel")
-        main_layout.addWidget(title)
+        # ===== FORM =====
+        form = QFormLayout()
 
-        # Barra superior
-        top_bar = QHBoxLayout()
+        self.txt_codigo = QLineEdit()
+        self.txt_nombre = QLineEdit()
+        self.txt_obs = QLineEdit()
 
-        self.btn_new = QPushButton("+ Nuevo")
-        self.btn_edit = QPushButton("Editar")
-        self.btn_delete = QPushButton("Eliminar")
+        form.addRow("Código:", self.txt_codigo)
+        form.addRow("Nombre:", self.txt_nombre)
+        form.addRow("Observaciones:", self.txt_obs)
 
-        for btn in (self.btn_new, self.btn_edit, self.btn_delete):
-            btn.setObjectName("ActionButton")
-            btn.setCursor(Qt.PointingHandCursor)
-            top_bar.addWidget(btn)
+        layout.addLayout(form)
 
-        top_bar.addStretch()
+        # ===== BOTONES =====
+        btns = QHBoxLayout()
 
-        self.search = QLineEdit()
-        self.search.setPlaceholderText("Buscar herramienta...")
-        self.search.setObjectName("ActionSearch")
-        self.search.textChanged.connect(self.buscar)
-        top_bar.addWidget(self.search)
+        self.btn_add = QPushButton(" Agregar")
+        self.btn_prestar = QPushButton(" Prestar")
+        self.btn_devolver = QPushButton(" Devolver")
 
-        main_layout.addLayout(top_bar)
+        btns.addWidget(self.btn_add)
+        btns.addWidget(self.btn_prestar)
+        btns.addWidget(self.btn_devolver)
 
-        # Tabla
+        layout.addLayout(btns)
+
+        # ===== TABLA =====
         self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(
-            ["Partida", "Descripción", "Ubicación", "Cantidad"]
-        )
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.verticalHeader().setDefaultSectionSize(48)
-        self.table.setAlternatingRowColors(True)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SingleSelection)
+        self.table.setHorizontalHeaderLabels([
+            "Código", "Nombre", "Estado", "Responsable"
+        ])
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
-        main_layout.addWidget(self.table)
+        layout.addWidget(self.table)
 
-        # Conexiones
-        self.btn_new.clicked.connect(self.agregar)
-        self.btn_edit.clicked.connect(self.editar)
-        self.btn_delete.clicked.connect(self.eliminar)
+        # ===== CONEXIONES =====
+        self.btn_add.clicked.connect(self.agregar)
+        self.btn_prestar.clicked.connect(self.prestar)
+        self.btn_devolver.clicked.connect(self.devolver)
 
-        self.refresh()
+        self.load_data()
 
-    # =========================
-    # Refrescar tabla
-    # =========================
-    def refresh(self):
-        items = list(store.herramientas.values())
-        self.table.setRowCount(len(items))
+    # ---------- DATA ----------
+    def load_data(self):
+        self.table.setRowCount(0)
+        for h in store.herramientas.values():
+            row = self.table.rowCount()
+            self.table.insertRow(row)
 
-        for row, h in enumerate(items):
-            valores = [
-                h.partida,
-                h.descripcion,
-                h.ubicacion,
-                str(h.cantidad)
-            ]
+            self.table.setItem(row, 0, QTableWidgetItem(h.codigo))
+            self.table.setItem(row, 1, QTableWidgetItem(h.nombre))
+            self.table.setItem(row, 2, QTableWidgetItem(h.estado))
+            self.table.setItem(row, 3, QTableWidgetItem(h.responsable))
 
-            for col, val in enumerate(valores):
-                cell = QTableWidgetItem(val)
-                if col == 3:
-                    cell.setTextAlignment(Qt.AlignCenter)
-                self.table.setItem(row, col, cell)
+    def selected_codigo(self):
+        row = self.table.currentRow()
+        if row < 0:
+            return None
+        return self.table.item(row, 0).text()
 
-    # =========================
-    # Acciones
-    # =========================
+    # ---------- ACCIONES ----------
     def agregar(self):
-        dlg = HerramientaDialog(self, "Nueva herramienta")
-        if dlg.exec():
-            d, u, c = dlg.get_data()
+        try:
+            h = Herramienta(
+                codigo=self.txt_codigo.text(),
+                nombre=self.txt_nombre.text(),
+                observaciones=self.txt_obs.text()
+            )
+            store.add_herramienta(h)
+            self.load_data()
+            QMessageBox.information(self, "OK", "Herramienta registrada")
 
-            if not d:
-                QMessageBox.warning(self, "Error", "La descripción es obligatoria")
-                return
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
 
-            partida = f"H-{len(store.herramientas) + 1:03d}"
-
-            store.herramientas[partida] = type("Herramienta", (), {
-                "partida": partida,
-                "descripcion": d,
-                "ubicacion": u,
-                "cantidad": c
-            })()
-
-            self.refresh()
-
-    def editar(self):
-        r = self.table.currentRow()
-        if r < 0:
-            QMessageBox.warning(self, "Aviso", "Selecciona una herramienta")
+    def prestar(self):
+        codigo = self.selected_codigo()
+        if not codigo:
             return
 
-        partida = self.table.item(r, 0).text()
-        h = store.herramientas.get(partida)
+        responsable = self.txt_nombre.text()
+        try:
+            store.prestar_herramienta(codigo, responsable)
+            self.load_data()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
 
-        dlg = HerramientaDialog(self, "Editar herramienta")
-        dlg.set_data(h.descripcion, h.ubicacion, h.cantidad)
-
-        if dlg.exec():
-            d, u, c = dlg.get_data()
-            h.descripcion = d
-            h.ubicacion = u
-            h.cantidad = c
-            self.refresh()
-
-    def eliminar(self):
-        r = self.table.currentRow()
-        if r < 0:
-            QMessageBox.warning(self, "Aviso", "Selecciona una herramienta")
+    def devolver(self):
+        codigo = self.selected_codigo()
+        if not codigo:
             return
 
-        partida = self.table.item(r, 0).text()
-        if partida in store.herramientas:
-            del store.herramientas[partida]
-            self.refresh()
-
-    # =========================
-    # Búsqueda
-    # =========================
-    def buscar(self, texto):
-        texto = texto.lower()
-        for r in range(self.table.rowCount()):
-            visible = False
-            for c in range(self.table.columnCount()):
-                item = self.table.item(r, c)
-                if item and texto in item.text().lower():
-                    visible = True
-                    break
-            self.table.setRowHidden(r, not visible)
+        try:
+            store.devolver_herramienta(codigo)
+            self.load_data()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))

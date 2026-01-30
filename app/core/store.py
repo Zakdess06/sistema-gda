@@ -24,12 +24,31 @@ class Entrada:
     ubicacion: str
     observaciones: str = ""
 
+@dataclass
+class Salida:
+    fecha: str
+    partida: str
+    descripcion: str
+    cantidad: int
+    unidad: str
+    destino: str
+    entrego: str
+    observaciones: str = ""
+
+@dataclass
+class Herramienta:
+    codigo: str
+    nombre: str
+    estado: str = "Disponible"
+    responsable: str = ""
+    observaciones: str = ""
 
 class Store:
     def __init__(self):
         self.almacen: Dict[str, AlmacenItem] = {}
         self.entradas: List[Entrada] = []
-        self.herramientas = {}
+        self.salidas: List[Salida] = []
+        self.herramientas: Dict[str, 'Herramienta'] = {}
 
     def seed_demo(self):
         demo = [
@@ -55,6 +74,45 @@ class Store:
             item.ubicacion = entrada.ubicacion
 
         self.entradas.append(entrada)
+
+    def add_salida(self, salida: Salida):
+        if salida.partida not in self.almacen:
+            raise KeyError("Partida no registrada")
+
+        item = self.almacen[salida.partida]
+
+        if salida.cantidad > item.cantidad:
+            raise ValueError("Stock insuficiente")
+
+        item.cantidad -= int(salida.cantidad)
+        self.salidas.append(salida)
+
+    # Herramientas management
+    def add_herramienta(self, h: 'Herramienta'):
+        if h.codigo in self.herramientas:
+            raise ValueError("La herramienta ya existe")
+        self.herramientas[h.codigo] = h
+
+    def prestar_herramienta(self, codigo: str, responsable: str):
+        h = self.herramientas.get(codigo)
+        if not h:
+            raise KeyError("Herramienta no encontrada")
+        if h.estado != "Disponible":
+            raise ValueError("La herramienta no está disponible")
+
+        h.estado = "Prestada"
+        h.responsable = responsable
+
+    def devolver_herramienta(self, codigo: str):
+        h = self.herramientas.get(codigo)
+        if not h:
+            raise KeyError("Herramienta no encontrada")
+
+        h.estado = "Disponible"
+        h.responsable = ""
+
+
+
 
 
 store = Store()
