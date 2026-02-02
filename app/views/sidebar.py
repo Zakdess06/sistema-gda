@@ -10,6 +10,7 @@ class Sidebar(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
 
         buttons = {
             "Dashboard": "dashboard",
@@ -18,12 +19,15 @@ class Sidebar(QWidget):
             "Salidas": "salidas",
             "Herramientas": "herramientas",
             "Reportes": "reportes",
+            "Bitácora": "bitacora",          
             "Configuración": "configuracion",
         }
 
         for text, view_name in buttons.items():
             btn = QPushButton(text)
-            btn.clicked.connect(lambda _, v=view_name: self.view_changed.emit(v))
+            btn.clicked.connect(
+                lambda _, v=view_name: self.view_changed.emit(v)
+            )
             layout.addWidget(btn)
 
         layout.addStretch()

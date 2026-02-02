@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, List, Callable
+
 from app.core.config import config
+from app.core.bitacora import bitacora
 
 
 # ===================== MODELOS =====================
@@ -58,7 +60,6 @@ class Store:
         self.salidas: List[Salida] = []
         self.herramientas: Dict[str, Herramienta] = {}
 
-        # OBSERVERS
         self._subscribers: List[Callable] = []
 
     # ---------- OBSERVERS ----------
@@ -72,6 +73,7 @@ class Store:
 
     # ---------- DEMO ----------
     def seed_demo(self):
+        self.almacen.clear()
         demo = [
             AlmacenItem("E-001", "Arnés eléctrico", "Pza", 15, "Estante A", "Bosch"),
             AlmacenItem("E-002", "Sensor de oxígeno", "Pza", 10, "Estante B", "Denso"),
@@ -80,6 +82,9 @@ class Store:
         ]
         for item in demo:
             self.almacen[item.partida] = item
+
+        bitacora.log("Sistema", "Datos de demo cargados")
+        self.notify()
 
     # ---------- ALMACÉN ----------
     def add_entrada(self, entrada: Entrada):
@@ -95,6 +100,12 @@ class Store:
             item.ubicacion = entrada.ubicacion
 
         self.entradas.append(entrada)
+
+        bitacora.log(
+            "Entrada",
+            f"{entrada.partida} +{entrada.cantidad} {entrada.unidad}"
+        )
+
         self.notify()
 
     def add_salida(self, salida: Salida):
@@ -108,6 +119,12 @@ class Store:
 
         item.cantidad -= salida.cantidad
         self.salidas.append(salida)
+
+        bitacora.log(
+            "Salida",
+            f"{salida.partida} -{salida.cantidad} {salida.unidad} → {salida.destino}"
+        )
+
         self.notify()
 
     # ---------- HERRAMIENTAS ----------
@@ -116,6 +133,12 @@ class Store:
             raise ValueError("La herramienta ya existe")
 
         self.herramientas[h.codigo] = h
+
+        bitacora.log(
+            "Herramienta",
+            f"Alta {h.codigo} - {h.nombre}"
+        )
+
         self.notify()
 
     def prestar_herramienta(self, codigo: str, responsable: str):
@@ -127,6 +150,12 @@ class Store:
 
         h.estado = "Prestada"
         h.responsable = responsable
+
+        bitacora.log(
+            "Préstamo",
+            f"{codigo} prestada a {responsable}"
+        )
+
         self.notify()
 
     def devolver_herramienta(self, codigo: str):
@@ -136,6 +165,12 @@ class Store:
 
         h.estado = "Disponible"
         h.responsable = ""
+
+        bitacora.log(
+            "Devolución",
+            f"{codigo} devuelta"
+        )
+
         self.notify()
 
     # ---------- ALERTAS ----------
