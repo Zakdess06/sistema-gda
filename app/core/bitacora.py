@@ -1,21 +1,13 @@
-from dataclasses import dataclass
-from typing import List, Callable
 from datetime import datetime
-
-
-@dataclass
-class BitacoraItem:
-    fecha: str
-    accion: str
-    detalle: str
+from typing import List, Callable
 
 
 class Bitacora:
     def __init__(self):
-        self.items: List[BitacoraItem] = []
+        self.logs: List[dict] = []
         self._subscribers: List[Callable] = []
 
-    # ===== OBSERVERS =====
+    # ---------- OBSERVERS ----------
     def subscribe(self, callback):
         if callback not in self._subscribers:
             self._subscribers.append(callback)
@@ -24,16 +16,20 @@ class Bitacora:
         for cb in self._subscribers:
             cb()
 
-    # ===== REGISTRO =====
-    def log(self, accion: str, detalle: str):
-        item = BitacoraItem(
-            fecha=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            accion=accion,
-            detalle=detalle
-        )
-        self.items.append(item)
+    # ---------- LOG ----------
+    def log(self, tipo: str, mensaje: str):
+        self.logs.append({
+            "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "tipo": tipo,
+            "mensaje": mensaje
+        })
+        self.notify()
+
+    # ---------- CLEAR ----------
+    def clear(self):
+        self.logs.clear()
         self.notify()
 
 
-# ===== SINGLETON =====
+# Singleton
 bitacora = Bitacora()

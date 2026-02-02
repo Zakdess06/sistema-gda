@@ -1,9 +1,15 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QTabWidget,
+    QWidget, QVBoxLayout, QLabel,
+    QComboBox, QPushButton,
+    QFileDialog, QMessageBox,
     QTableWidget, QTableWidgetItem
 )
+from PySide6.QtCore import Qt
+from datetime import datetime
 
 from app.core.store import store
+from app.core.bitacora import bitacora
+from app.core.exporter import export_to_excel
 
 
 class ReportesView(QWidget):
@@ -11,95 +17,193 @@ class ReportesView(QWidget):
         super().__init__()
 
         layout = QVBoxLayout(self)
-        tabs = QTabWidget()
 
-        tabs.addTab(self.tab_almacen(), "Almacén")
-        tabs.addTab(self.tab_entradas(), "Entradas")
-        tabs.addTab(self.tab_salidas(), "Salidas")
-        tabs.addTab(self.tab_herramientas(), "Herramientas")
+        lbl = QLabel("Reportes")
+        lbl.setAlignment(Qt.AlignCenter)
+        lbl.setStyleSheet("font-size:18px; font-weight:bold;")
+        layout.addWidget(lbl)
 
-        layout.addWidget(tabs)
-
-    # -------- TABS --------
-    def tab_almacen(self):
-        table = QTableWidget(0, 6)
-        table.setHorizontalHeaderLabels([
-            "Partida", "Descripción", "Unidad",
-            "Cantidad", "Ubicación", "Proveedor"
+        self.cmb_tipo = QComboBox()
+        self.cmb_tipo.addItems([
+            "Almacén",
+            "Entradas",
+            "Salidas"
         ])
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.cmb_tipo.currentTextChanged.connect(self.load_preview)
+        layout.addWidget(self.cmb_tipo)
 
-        for item in store.almacen.values():
-            row = table.rowCount()
-            table.insertRow(row)
+        self.table = QTableWidget()
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        layout.addWidget(self.table)
 
-            table.setItem(row, 0, QTableWidgetItem(item.partida))
-            table.setItem(row, 1, QTableWidgetItem(item.descripcion))
-            table.setItem(row, 2, QTableWidgetItem(item.unidad))
-            table.setItem(row, 3, QTableWidgetItem(str(item.cantidad)))
-            table.setItem(row, 4, QTableWidgetItem(item.ubicacion))
-            table.setItem(row, 5, QTableWidgetItem(item.proveedor))
+        btn_export = QPushButton("Exportar a Excel")
+        btn_export.clicked.connect(self.exportar)
+        layout.addWidget(btn_export)
 
-        return table
+        self.load_preview()
 
-    def tab_entradas(self):
-        table = QTableWidget(0, 7)
-        table.setHorizontalHeaderLabels([
+    # ---------- PREVIEW ----------
+
+    def load_preview(self):
+        tipo = self.cmb_tipo.currentText()
+
+        if tipo == "Almacén":
+            headers = ["Partida", "Descripción", "Unidad", "Cantidad", "Ubicación", "Proveedor"]
+            rows = [
+                (
+                    i.partida,
+                    i.descripcion,
+                    i.unidad,
+                    i.cantidad,
+                    i.ubicacion,
+                    i.proveedor
+                )
+                for i in store.almacen.values()
+            ]
+
+        elif tipo == "Entradas":
+            headers = [
+                "Fecha", "Partida", "Descripción",
+                "Cantidad", "Unidad", "Proveedor",
+                "Recibió", "Ubicación"
+            ]
+            rows = [
+                (
+                    e.fecha,
+                    e.partida,
+                    e.descripcion,
+                    e.cantidad,
+                    e.unidad,
+                    e.proveedor,
+                    e.recibio,
+                    e.ubicacion
+                )
+                for e in store.entradas
+            ]
+
+        elif tipo == "Salidas":
+            headers = [
+                "Fecha", "Partida", "Descripción",
+                "Cantidad", "Unidad",
+                "Destino", "Entregó"
+            ]
+            rows = [
+                (
+                    s.fecha,
+                    s.partida,
+                    s.descripcion,
+                    s.cantidad,
+                    s.unidad,
+                    s.destino,
+                    s.entrego
+                )
+                for s in store.salidas
+            ]
+
+        
+
+        self.populate_table(headers, rows)
+
+    def populate_table(self, headers, rows):
+        self.table.clear()
+        self.table.setRowCount(0)
+        self.table.setColumnCount(len(headers))
+        self.table.setHorizontalHeaderLabels(headers)
+
+        for row_data in rows:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+
+            for col, value in enumerate(row_data):
+                self.table.setItem(row, col, QTableWidgetItem(str(value)))
+
+    # ---------- EXPORT ----------
+
+    def exportar(self):
+        tipo = self.cmb_tipo.currentText()
+
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Guardar reporte",
+            f"{tipo.lower()}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+            "Excel (*.xlsx)"
+        )
+
+        if not path:
+            return
+
+        try:
+            if tipo == "Almacén":
+                self.export_almacen(path)
+            elif tipo == "Entradas":
+                self.export_entradas(path)
+            elif tipo == "Salidas":
+                self.export_salidas(path)
+            
+            QMessageBox.information(self, "Listo", "Reporte exportado correctamente")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    # ---------- EXPORT METHODS ----------
+
+    def export_almacen(self, path):
+        headers = ["Partida", "Descripción", "Unidad", "Cantidad", "Ubicación", "Proveedor"]
+        rows = [
+            (
+                i.partida,
+                i.descripcion,
+                i.unidad,
+                i.cantidad,
+                i.ubicacion,
+                i.proveedor
+            )
+            for i in store.almacen.values()
+        ]
+        export_to_excel(headers, rows, path)
+
+    def export_entradas(self, path):
+        headers = [
             "Fecha", "Partida", "Descripción",
-            "Cantidad", "Unidad", "Proveedor", "Recibió"
-        ])
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
+            "Cantidad", "Unidad", "Proveedor",
+            "Recibió", "Ubicación", "Observaciones"
+        ]
+        rows = [
+            (
+                e.fecha,
+                e.partida,
+                e.descripcion,
+                e.cantidad,
+                e.unidad,
+                e.proveedor,
+                e.recibio,
+                e.ubicacion,
+                e.observaciones
+            )
+            for e in store.entradas
+        ]
+        export_to_excel(headers, rows, path)
 
-        for e in store.entradas:
-            row = table.rowCount()
-            table.insertRow(row)
-
-            table.setItem(row, 0, QTableWidgetItem(e.fecha))
-            table.setItem(row, 1, QTableWidgetItem(e.partida))
-            table.setItem(row, 2, QTableWidgetItem(e.descripcion))
-            table.setItem(row, 3, QTableWidgetItem(str(e.cantidad)))
-            table.setItem(row, 4, QTableWidgetItem(e.unidad))
-            table.setItem(row, 5, QTableWidgetItem(e.proveedor))
-            table.setItem(row, 6, QTableWidgetItem(e.recibio))
-
-        return table
-
-    def tab_salidas(self):
-        table = QTableWidget(0, 7)
-        table.setHorizontalHeaderLabels([
+    def export_salidas(self, path):
+        headers = [
             "Fecha", "Partida", "Descripción",
-            "Cantidad", "Unidad", "Destino", "Entregó"
-        ])
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
+            "Cantidad", "Unidad",
+            "Destino", "Entregó", "Observaciones"
+        ]
+        rows = [
+            (
+                s.fecha,
+                s.partida,
+                s.descripcion,
+                s.cantidad,
+                s.unidad,
+                s.destino,
+                s.entrego,
+                s.observaciones
+            )
+            for s in store.salidas
+        ]
+        export_to_excel(headers, rows, path)
 
-        for s in store.salidas:
-            row = table.rowCount()
-            table.insertRow(row)
-
-            table.setItem(row, 0, QTableWidgetItem(s.fecha))
-            table.setItem(row, 1, QTableWidgetItem(s.partida))
-            table.setItem(row, 2, QTableWidgetItem(s.descripcion))
-            table.setItem(row, 3, QTableWidgetItem(str(s.cantidad)))
-            table.setItem(row, 4, QTableWidgetItem(s.unidad))
-            table.setItem(row, 5, QTableWidgetItem(s.destino))
-            table.setItem(row, 6, QTableWidgetItem(s.entrego))
-
-        return table
-
-    def tab_herramientas(self):
-        table = QTableWidget(0, 4)
-        table.setHorizontalHeaderLabels([
-            "Código", "Nombre", "Estado", "Responsable"
-        ])
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
-
-        for h in store.herramientas.values():
-            row = table.rowCount()
-            table.insertRow(row)
-
-            table.setItem(row, 0, QTableWidgetItem(h.codigo))
-            table.setItem(row, 1, QTableWidgetItem(h.nombre))
-            table.setItem(row, 2, QTableWidgetItem(h.estado))
-            table.setItem(row, 3, QTableWidgetItem(h.responsable))
-
-        return table
+    

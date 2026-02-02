@@ -63,7 +63,7 @@ class Store:
         self._subscribers: List[Callable] = []
 
     # ---------- OBSERVERS ----------
-    def subscribe(self, callback):
+    def subscribe(self, callback: Callable):
         if callback not in self._subscribers:
             self._subscribers.append(callback)
 
@@ -74,12 +74,14 @@ class Store:
     # ---------- DEMO ----------
     def seed_demo(self):
         self.almacen.clear()
+
         demo = [
             AlmacenItem("E-001", "Arnés eléctrico", "Pza", 15, "Estante A", "Bosch"),
             AlmacenItem("E-002", "Sensor de oxígeno", "Pza", 10, "Estante B", "Denso"),
             AlmacenItem("E-003", "Relay 12V", "Pza", 40, "Gaveta 3", "Hella"),
             AlmacenItem("E-004", "Fusible 30A", "Pza", 120, "Caja Fusibles", "Truper"),
         ]
+
         for item in demo:
             self.almacen[item.partida] = item
 
@@ -103,7 +105,7 @@ class Store:
 
         bitacora.log(
             "Entrada",
-            f"{entrada.partida} +{entrada.cantidad} {entrada.unidad}"
+            f"{entrada.partida} +{entrada.cantidad} {entrada.unidad} | Recibió: {entrada.recibio}"
         )
 
         self.notify()
@@ -114,6 +116,9 @@ class Store:
 
         item = self.almacen[salida.partida]
 
+        if salida.cantidad <= 0:
+            raise ValueError("Cantidad inválida")
+
         if salida.cantidad > item.cantidad:
             raise ValueError("Stock insuficiente")
 
@@ -122,7 +127,7 @@ class Store:
 
         bitacora.log(
             "Salida",
-            f"{salida.partida} -{salida.cantidad} {salida.unidad} → {salida.destino}"
+            f"{salida.partida} -{salida.cantidad} {salida.unidad} → {salida.destino} | Entregó: {salida.entrego}"
         )
 
         self.notify()
@@ -136,13 +141,14 @@ class Store:
 
         bitacora.log(
             "Herramienta",
-            f"Alta {h.codigo} - {h.nombre}"
+            f"Alta de herramienta {h.codigo} - {h.nombre}"
         )
 
         self.notify()
 
     def prestar_herramienta(self, codigo: str, responsable: str):
         h = self.herramientas.get(codigo)
+
         if not h:
             raise KeyError("Herramienta no encontrada")
         if h.estado != "Disponible":
@@ -160,6 +166,7 @@ class Store:
 
     def devolver_herramienta(self, codigo: str):
         h = self.herramientas.get(codigo)
+
         if not h:
             raise KeyError("Herramienta no encontrada")
 
@@ -176,8 +183,8 @@ class Store:
     # ---------- ALERTAS ----------
     def productos_stock_bajo(self):
         return [
-            i for i in self.almacen.values()
-            if i.cantidad <= config.stock_minimo
+            item for item in self.almacen.values()
+            if item.cantidad <= config.stock_minimo
         ]
 
 

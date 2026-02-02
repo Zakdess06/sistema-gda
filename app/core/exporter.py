@@ -1,17 +1,21 @@
-import csv
-from app.core.store import store
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from datetime import datetime
 
 
-def export_almacen_csv(path):
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            "Partida", "Descripción", "Unidad",
-            "Cantidad", "Ubicación", "Proveedor"
-        ])
+def export_to_excel(headers, rows, filename):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Datos"
 
-        for i in store.almacen.values():
-            writer.writerow([
-                i.partida, i.descripcion, i.unidad,
-                i.cantidad, i.ubicacion, i.proveedor
-            ])
+    # HEADER
+    for col, header in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True)
+
+    # DATA
+    for row_i, row in enumerate(rows, start=2):
+        for col_i, value in enumerate(row, start=1):
+            ws.cell(row=row_i, column=col_i, value=value)
+
+    wb.save(filename)
