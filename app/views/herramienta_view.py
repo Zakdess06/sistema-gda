@@ -18,10 +18,12 @@ class HerramientasView(QWidget):
 
         self.txt_codigo = QLineEdit()
         self.txt_nombre = QLineEdit()
+        self.txt_responsable = QLineEdit()
         self.txt_obs = QLineEdit()
 
         form.addRow("Código:", self.txt_codigo)
-        form.addRow("Nombre:", self.txt_nombre)
+        form.addRow("Nombre herramienta:", self.txt_nombre)
+        form.addRow("Responsable:", self.txt_responsable)
         form.addRow("Observaciones:", self.txt_obs)
 
         layout.addLayout(form)
@@ -29,9 +31,9 @@ class HerramientasView(QWidget):
         # ===== BOTONES =====
         btns = QHBoxLayout()
 
-        self.btn_add = QPushButton(" Agregar")
-        self.btn_prestar = QPushButton(" Prestar")
-        self.btn_devolver = QPushButton(" Devolver")
+        self.btn_add = QPushButton("Agregar")
+        self.btn_prestar = QPushButton("Prestar")
+        self.btn_devolver = QPushButton("Devolver")
 
         btns.addWidget(self.btn_add)
         btns.addWidget(self.btn_prestar)
@@ -90,10 +92,11 @@ class HerramientasView(QWidget):
 
     def prestar(self):
         codigo = self.selected_codigo()
-        if not codigo:
+        responsable = self.txt_responsable.text()
+
+        if not codigo or not responsable:
             return
 
-        responsable = self.txt_nombre.text()
         try:
             store.prestar_herramienta(codigo, responsable)
             self.load_data()
