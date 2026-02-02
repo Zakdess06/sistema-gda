@@ -110,6 +110,8 @@ class ConfiguracionView(QWidget):
 
             # volver a cargar demo
             store.seed_demo()
+            store.notify()
+
 
             QMessageBox.information(
                 self,
