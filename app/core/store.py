@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Callable
+from app.core.config import config
 
 
 # ===================== MODELOS =====================
@@ -57,7 +58,7 @@ class Store:
         self.salidas: List[Salida] = []
         self.herramientas: Dict[str, Herramienta] = {}
 
-        # 👇 OBSERVERS (Dashboard, vistas)
+        # OBSERVERS
         self._subscribers: List[Callable] = []
 
     # ---------- OBSERVERS ----------
@@ -73,7 +74,7 @@ class Store:
     def seed_demo(self):
         demo = [
             AlmacenItem("E-001", "Arnés eléctrico", "Pza", 15, "Estante A", "Bosch"),
-            AlmacenItem("E-002", "Sensor de oxígeno", "Pza", 8, "Estante B", "Denso"),
+            AlmacenItem("E-002", "Sensor de oxígeno", "Pza", 10, "Estante B", "Denso"),
             AlmacenItem("E-003", "Relay 12V", "Pza", 40, "Gaveta 3", "Hella"),
             AlmacenItem("E-004", "Fusible 30A", "Pza", 120, "Caja Fusibles", "Truper"),
         ]
@@ -136,6 +137,13 @@ class Store:
         h.estado = "Disponible"
         h.responsable = ""
         self.notify()
+
+    # ---------- ALERTAS ----------
+    def productos_stock_bajo(self):
+        return [
+            i for i in self.almacen.values()
+            if i.cantidad <= config.stock_minimo
+        ]
 
 
 # ===================== SINGLETON =====================

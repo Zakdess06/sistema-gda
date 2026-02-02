@@ -3,8 +3,10 @@ from PySide6.QtWidgets import (
     QPushButton, QTableWidget, QTableWidgetItem,
     QMessageBox
 )
+from PySide6.QtCore import Qt
 
 from app.core.store import store, AlmacenItem
+from app.core.config import config
 
 
 class AlmacenView(QWidget):
@@ -13,7 +15,7 @@ class AlmacenView(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # ----- BOTONES -----
+        # ===== BOTONES =====
         btn_layout = QHBoxLayout()
 
         self.btn_add = QPushButton("Agregar producto demo")
@@ -25,7 +27,7 @@ class AlmacenView(QWidget):
 
         layout.addLayout(btn_layout)
 
-        # ----- TABLA -----
+        # ===== TABLA =====
         self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels([
             "Partida", "Descripción", "Unidad",
@@ -33,14 +35,20 @@ class AlmacenView(QWidget):
         ])
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.horizontalHeader().setStretchLastSection(True)
 
         layout.addWidget(self.table)
 
-        # ----- CONEXIONES -----
+        # ===== CONEXIONES =====
         self.btn_add.clicked.connect(self.add_demo_product)
         self.btn_delete.clicked.connect(self.delete_selected)
 
+        # escuchar cambios del store
+        store.subscribe(self.load_data)
+
         self.load_data()
+
+    # ===================== DATA =====================
 
     def load_data(self):
         self.table.setRowCount(0)
@@ -52,9 +60,20 @@ class AlmacenView(QWidget):
             self.table.setItem(row, 0, QTableWidgetItem(item.partida))
             self.table.setItem(row, 1, QTableWidgetItem(item.descripcion))
             self.table.setItem(row, 2, QTableWidgetItem(item.unidad))
-            self.table.setItem(row, 3, QTableWidgetItem(str(item.cantidad)))
+
+            # ----- CANTIDAD CON ALERTA -----
+            cantidad_item = QTableWidgetItem(str(item.cantidad))
+            cantidad_item.setTextAlignment(Qt.AlignCenter)
+
+            if item.cantidad <= config.stock_minimo:
+                cantidad_item.setForeground(Qt.red)
+
+            self.table.setItem(row, 3, cantidad_item)
+
             self.table.setItem(row, 4, QTableWidgetItem(item.ubicacion))
             self.table.setItem(row, 5, QTableWidgetItem(item.proveedor))
+
+    # ===================== ACCIONES =====================
 
     def add_demo_product(self):
         partida = f"E-{len(store.almacen) + 1:03d}"
@@ -67,13 +86,13 @@ class AlmacenView(QWidget):
             partida=partida,
             descripcion="Producto demo",
             unidad="Pza",
-            cantidad=10,
+            cantidad=config.stock_minimo,  # intencional para mostrar alerta
             ubicacion="Demo",
             proveedor="Proveedor demo"
         )
 
         store.almacen[partida] = nuevo
-        self.load_data()
+        store.notify()  # actualiza dashboard y vistas
 
     def delete_selected(self):
         selected = self.table.currentRow()
@@ -86,12 +105,13 @@ class AlmacenView(QWidget):
             self,
             "Confirmar",
             f"¿Eliminar la partida {partida}?",
+            QMessageBox.Yes | QMessageBox.No
         )
 
         if confirm == QMessageBox.Yes:
             store.almacen.pop(partida, None)
-            self.load_data()
-            
+            store.notify()
+
     def showEvent(self, event):
         self.load_data()
         super().showEvent(event)
