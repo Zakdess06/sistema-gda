@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QPushButton, QMessageBox,
     QTableWidget, QTableWidgetItem
 )
-from datetime import date
+from datetime import datetime
 
 from app.core.store import store, Salida
 
@@ -40,7 +40,7 @@ class SalidasView(QWidget):
 
         # ===== BOTÓN =====
         btn_layout = QHBoxLayout()
-        self.btn_salida = QPushButton(" Registrar salida")
+        self.btn_salida = QPushButton("Registrar salida")
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_salida)
         layout.addLayout(btn_layout)
@@ -72,8 +72,18 @@ class SalidasView(QWidget):
 
     def update_descripcion(self, partida):
         item = store.almacen.get(partida)
-        if item:
-            self.txt_descripcion.setText(item.descripcion)
+        if not item:
+            self.txt_descripcion.clear()
+            self.btn_salida.setEnabled(False)
+            return
+
+        self.txt_descripcion.setText(item.descripcion)
+
+        # bloquear si no hay stock
+        self.btn_salida.setEnabled(item.cantidad > 0)
+
+        # ajustar máximo permitido
+        self.spin_cantidad.setMaximum(item.cantidad)
 
     def load_salidas(self):
         self.table.setRowCount(0)
@@ -95,12 +105,31 @@ class SalidasView(QWidget):
             QMessageBox.warning(self, "Error", "Seleccione una partida")
             return
 
+        if not self.txt_destino.text().strip():
+            QMessageBox.warning(self, "Error", "El destino es obligatorio")
+            return
+
+        if not self.txt_entrego.text().strip():
+            QMessageBox.warning(self, "Error", "El nombre de quien entrega es obligatorio")
+            return
+
+        disponible = store.almacen[partida].cantidad
+        cantidad = self.spin_cantidad.value()
+
+        if cantidad > disponible:
+            QMessageBox.critical(
+                self,
+                "Stock insuficiente",
+                f"Disponible: {disponible}"
+            )
+            return
+
         try:
             salida = Salida(
-                fecha=str(date.today()),
+                fecha=datetime.now().strftime("%Y-%m-%d %H:%M"),
                 partida=partida,
                 descripcion=self.txt_descripcion.text(),
-                cantidad=self.spin_cantidad.value(),
+                cantidad=cantidad,
                 unidad=store.almacen[partida].unidad,
                 destino=self.txt_destino.text(),
                 entrego=self.txt_entrego.text(),
@@ -109,10 +138,13 @@ class SalidasView(QWidget):
 
             store.add_salida(salida)
             self.load_salidas()
+            self.update_descripcion(partida)
 
             QMessageBox.information(self, "Éxito", "Salida registrada correctamente")
 
             self.spin_cantidad.setValue(1)
+            self.txt_destino.clear()
+            self.txt_entrego.clear()
             self.txt_obs.clear()
 
         except Exception as e:
