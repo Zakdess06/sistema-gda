@@ -3,7 +3,6 @@ from PySide6.QtWidgets import QWidget, QStackedLayout, QLabel
 from app.views.almacen_view import AlmacenView
 from app.views.entradas_view import EntradasView
 from app.views.herramienta_view import HerramientaView
-from app.views.reportes_view import ReportesView
 
 
 class ContentArea(QWidget):
@@ -20,7 +19,6 @@ class ContentArea(QWidget):
         self.almacen = AlmacenView()
         self.entradas = EntradasView()
         self.herramientas = HerramientaView()
-        self.reportes = ReportesView()
 
         self.salidas = QLabel("Salidas")
         self.salidas.setStyleSheet("font-size: 24px;")
@@ -31,7 +29,6 @@ class ContentArea(QWidget):
         self.layout.addWidget(self.entradas)
         self.layout.addWidget(self.herramientas)
         self.layout.addWidget(self.salidas)
-        self.layout.addWidget(self.reportes)
 
         # Vista inicial
         self.layout.setCurrentWidget(self.dashboard)
@@ -50,6 +47,3 @@ class ContentArea(QWidget):
 
     def show_salidas(self):
         self.layout.setCurrentWidget(self.salidas)
-
-    def show_reportes(self):
-        self.layout.setCurrentWidget(self.reportes)

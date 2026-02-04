@@ -9,6 +9,8 @@ class Config:
         self.empresa = "Empresa Demo"
         self.responsable = "Administrador"
         self.stock_minimo = 5
+        # tema por defecto: 'dark' o 'light'
+        self.theme = "dark"
 
     def load(self):
         if CONFIG_FILE.exists():

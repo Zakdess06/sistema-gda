@@ -1,11 +1,12 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
-    QPushButton, QMessageBox, QFrame
+    QPushButton, QMessageBox, QFrame, QComboBox, QApplication
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 
 from app.core.store import store
+from app.core.config import config
 
 
 class ConfiguracionView(QWidget):
@@ -80,6 +81,19 @@ class ConfiguracionView(QWidget):
 
         layout.addWidget(info)
 
+        # ===== TEMA (selector simple) =====
+        lbl_selec = QLabel("Seleccionar tema:")
+        lbl_selec.setStyleSheet("color: #ccc; margin-top:8px;")
+        layout.addWidget(lbl_selec)
+
+        self.cmb_tema = QComboBox()
+        self.cmb_tema.addItems(["Oscuro", "Claro"])
+        # establecer valor actual desde config
+        cur = "Oscuro" if getattr(config, "theme", "dark") == "dark" else "Claro"
+        self.cmb_tema.setCurrentText(cur)
+        self.cmb_tema.currentTextChanged.connect(self.on_theme_changed)
+        layout.addWidget(self.cmb_tema)
+
         # ===== BOTONES =====
         btn_reset = QPushButton("Reiniciar datos de demo")
         btn_reset.setStyleSheet("""
@@ -118,3 +132,22 @@ class ConfiguracionView(QWidget):
                 "Listo",
                 "Datos de la demo reiniciados"
             )
+
+    def on_theme_changed(self, text):
+        # mapa visible -> valor guardado
+        theme = "dark" if text == "Oscuro" else "light"
+        config.theme = theme
+        try:
+            config.save()
+        except Exception:
+            pass
+
+        # aplicar estilo si la app está activa
+        app = QApplication.instance()
+        if app:
+            qss_path = "app/styles/dark.qss" if theme == "dark" else "app/styles/light.qss"
+            try:
+                with open(qss_path, "r", encoding="utf-8") as f:
+                    app.setStyleSheet(f.read())
+            except Exception:
+                pass

@@ -25,6 +25,7 @@ class Sidebar(QWidget):
 
         for text, view_name in buttons.items():
             btn = QPushButton(text)
+            btn.setObjectName("SidebarButton")
             btn.clicked.connect(
                 lambda _, v=view_name: self.view_changed.emit(v)
             )
