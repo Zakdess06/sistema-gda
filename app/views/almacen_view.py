@@ -7,6 +7,8 @@ from PySide6.QtCore import Qt
 
 from app.core.store import store, AlmacenItem
 from app.core.config import config
+from app.core.bitacora import bitacora
+from app.views.producto_dialog import ProductoDialog
 
 
 class AlmacenView(QWidget):
@@ -18,20 +20,22 @@ class AlmacenView(QWidget):
         # ===== BOTONES =====
         btn_layout = QHBoxLayout()
 
-        self.btn_add = QPushButton("Agregar producto demo")
-        self.btn_delete = QPushButton("Eliminar seleccionado")
+        self.btn_add = QPushButton("Agregar Producto")
+        self.btn_edit = QPushButton("Editar Seleccionado")
+        self.btn_delete = QPushButton("Eliminar Seleccionado")
 
         btn_layout.addWidget(self.btn_add)
+        btn_layout.addWidget(self.btn_edit)
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addStretch()
 
         layout.addLayout(btn_layout)
 
         # ===== TABLA =====
-        self.table = QTableWidget(0, 6)
+        self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels([
             "Partida", "Descripción", "Unidad",
-            "Cantidad", "Ubicación", "Proveedor"
+            "Cantidad", "Stock Mín.", "Ubicación", "Proveedor"
         ])
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -40,7 +44,8 @@ class AlmacenView(QWidget):
         layout.addWidget(self.table)
 
         # ===== CONEXIONES =====
-        self.btn_add.clicked.connect(self.add_demo_product)
+        self.btn_add.clicked.connect(self.add_product)
+        self.btn_edit.clicked.connect(self.edit_selected)
         self.btn_delete.clicked.connect(self.delete_selected)
 
         # escuchar cambios del store
@@ -65,52 +70,62 @@ class AlmacenView(QWidget):
             cantidad_item = QTableWidgetItem(str(item.cantidad))
             cantidad_item.setTextAlignment(Qt.AlignCenter)
 
-            if item.cantidad <= config.stock_minimo:
+            if item.cantidad <= item.stock_minimo:
                 cantidad_item.setForeground(Qt.red)
 
             self.table.setItem(row, 3, cantidad_item)
 
-            self.table.setItem(row, 4, QTableWidgetItem(item.ubicacion))
-            self.table.setItem(row, 5, QTableWidgetItem(item.proveedor))
+            # ----- STOCK MÍNIMO -----
+            stock_min_item = QTableWidgetItem(str(item.stock_minimo))
+            stock_min_item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 4, stock_min_item)
+
+            self.table.setItem(row, 5, QTableWidgetItem(item.ubicacion))
+            self.table.setItem(row, 6, QTableWidgetItem(item.proveedor))
 
     # ===================== ACCIONES =====================
 
-    def add_demo_product(self):
-        partida = f"E-{len(store.almacen) + 1:03d}"
+    def add_product(self):
+        dialog = ProductoDialog(self)
+        if dialog.exec():
+            bitacora.log("Almacén", f"Nuevo producto agregado: {dialog.txt_partida.text()}")
 
-        if partida in store.almacen:
-            QMessageBox.warning(self, "Error", "La partida ya existe")
+    def edit_selected(self):
+        selected = self.table.currentRow()
+        if selected < 0:
+            QMessageBox.warning(self, "Error", "Seleccione un producto para editar")
             return
 
-        nuevo = AlmacenItem(
-            partida=partida,
-            descripcion="Producto demo",
-            unidad="Pza",
-            cantidad=config.stock_minimo,  # intencional para mostrar alerta
-            ubicacion="Demo",
-            proveedor="Proveedor demo"
-        )
+        partida = self.table.item(selected, 0).text()
+        producto = store.almacen.get(partida)
 
-        store.almacen[partida] = nuevo
-        store.notify()  # actualiza dashboard y vistas
+        if not producto:
+            QMessageBox.warning(self, "Error", "Producto no encontrado")
+            return
+
+        dialog = ProductoDialog(self, producto)
+        if dialog.exec():
+            bitacora.log("Almacén", f"Producto editado: {partida}")
 
     def delete_selected(self):
         selected = self.table.currentRow()
         if selected < 0:
+            QMessageBox.warning(self, "Error", "Seleccione un producto para eliminar")
             return
 
         partida = self.table.item(selected, 0).text()
 
         confirm = QMessageBox.question(
             self,
-            "Confirmar",
-            f"¿Eliminar la partida {partida}?",
+            "Confirmar eliminación",
+            f"¿Eliminar la partida {partida}?\n\nEsta acción no se puede deshacer.",
             QMessageBox.Yes | QMessageBox.No
         )
 
         if confirm == QMessageBox.Yes:
             store.almacen.pop(partida, None)
             store.notify()
+            bitacora.log("Almacén", f"Producto eliminado: {partida}")
 
     def showEvent(self, event):
         self.load_data()

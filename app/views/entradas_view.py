@@ -7,8 +7,7 @@ from PySide6.QtWidgets import (
 from datetime import date
 
 from app.core.store import store, Entrada
-
-
+from app.core.bitacora import bitacora
 class EntradasView(QWidget):
     def __init__(self):
         super().__init__()
@@ -113,6 +112,7 @@ class EntradasView(QWidget):
 
             store.add_entrada(entrada)
             self.load_entradas()
+            bitacora.log("Entrada", f"{partida} +{self.spin_cantidad.value()} | Recibió: {self.txt_recibio.text()}")
 
             QMessageBox.information(self, "Éxito", "Entrada agregada correctamente")
 

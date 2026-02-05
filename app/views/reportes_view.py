@@ -27,7 +27,8 @@ class ReportesView(QWidget):
         self.cmb_tipo.addItems([
             "Almacén",
             "Entradas",
-            "Salidas"
+            "Salidas",
+            "Stock Mínimo"
         ])
         self.cmb_tipo.currentTextChanged.connect(self.load_preview)
         layout.addWidget(self.cmb_tipo)
@@ -49,13 +50,14 @@ class ReportesView(QWidget):
         tipo = self.cmb_tipo.currentText()
 
         if tipo == "Almacén":
-            headers = ["Partida", "Descripción", "Unidad", "Cantidad", "Ubicación", "Proveedor"]
+            headers = ["Partida", "Descripción", "Unidad", "Cantidad", "Stock Mín.", "Ubicación", "Proveedor"]
             rows = [
                 (
                     i.partida,
                     i.descripcion,
                     i.unidad,
                     i.cantidad,
+                    i.stock_minimo,
                     i.ubicacion,
                     i.proveedor
                 )
@@ -84,24 +86,39 @@ class ReportesView(QWidget):
 
         elif tipo == "Salidas":
             headers = [
-                "Fecha", "Partida", "Descripción",
-                "Cantidad", "Unidad",
+                "Fecha", "Trabajador", "Proyecto",
+                "Partida", "Descripción", "Cantidad",
                 "Destino", "Entregó"
             ]
             rows = [
                 (
                     s.fecha,
+                    f"{s.trabajador_id} - {s.trabajador_nombre}",
+                    s.proyecto,
                     s.partida,
                     s.descripcion,
                     s.cantidad,
-                    s.unidad,
                     s.destino,
                     s.entrego
                 )
                 for s in store.salidas
             ]
 
-        
+        elif tipo == "Stock Mínimo":
+            headers = ["Partida", "Descripción", "Cantidad", "Stock Mín.", "Diferencia", "Ubicación", "Proveedor"]
+            rows = [
+                (
+                    i.partida,
+                    i.descripcion,
+                    i.cantidad,
+                    i.stock_minimo,
+                    i.stock_minimo - i.cantidad,  # Cuánto falta para llegar al mínimo
+                    i.ubicacion,
+                    i.proveedor
+                )
+                for i in store.almacen.values()
+                if i.cantidad <= i.stock_minimo
+            ]
 
         self.populate_table(headers, rows)
 
@@ -126,7 +143,7 @@ class ReportesView(QWidget):
         path, _ = QFileDialog.getSaveFileName(
             self,
             "Guardar reporte",
-            f"{tipo.lower()}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+            f"{tipo.lower().replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
             "Excel (*.xlsx)"
         )
 
@@ -140,6 +157,8 @@ class ReportesView(QWidget):
                 self.export_entradas(path)
             elif tipo == "Salidas":
                 self.export_salidas(path)
+            elif tipo == "Stock Mínimo":
+                self.export_stock_minimo(path)
             
             QMessageBox.information(self, "Listo", "Reporte exportado correctamente")
 
@@ -149,13 +168,14 @@ class ReportesView(QWidget):
     # ---------- EXPORT METHODS ----------
 
     def export_almacen(self, path):
-        headers = ["Partida", "Descripción", "Unidad", "Cantidad", "Ubicación", "Proveedor"]
+        headers = ["Partida", "Descripción", "Unidad", "Cantidad", "Stock Mín.", "Ubicación", "Proveedor"]
         rows = [
             (
                 i.partida,
                 i.descripcion,
                 i.unidad,
                 i.cantidad,
+                i.stock_minimo,
                 i.ubicacion,
                 i.proveedor
             )
@@ -187,17 +207,19 @@ class ReportesView(QWidget):
 
     def export_salidas(self, path):
         headers = [
-            "Fecha", "Partida", "Descripción",
-            "Cantidad", "Unidad",
-            "Destino", "Entregó", "Observaciones"
+            "Fecha", "ID Trabajador", "Nombre Trabajador",
+            "Proyecto", "Partida", "Descripción",
+            "Cantidad", "Destino", "Entregó", "Observaciones"
         ]
         rows = [
             (
                 s.fecha,
+                s.trabajador_id,
+                s.trabajador_nombre,
+                s.proyecto,
                 s.partida,
                 s.descripcion,
                 s.cantidad,
-                s.unidad,
                 s.destino,
                 s.entrego,
                 s.observaciones
@@ -206,4 +228,19 @@ class ReportesView(QWidget):
         ]
         export_to_excel(headers, rows, path)
 
-    
+    def export_stock_minimo(self, path):
+        headers = ["Partida", "Descripción", "Cantidad", "Stock Mín.", "Diferencia", "Ubicación", "Proveedor"]
+        rows = [
+            (
+                i.partida,
+                i.descripcion,
+                i.cantidad,
+                i.stock_minimo,
+                i.stock_minimo - i.cantidad,
+                i.ubicacion,
+                i.proveedor
+            )
+            for i in store.almacen.values()
+            if i.cantidad <= i.stock_minimo
+        ]
+        export_to_excel(headers, rows, path)
