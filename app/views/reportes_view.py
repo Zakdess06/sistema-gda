@@ -61,7 +61,7 @@ class ReportesView(QWidget):
                     i.ubicacion,
                     i.proveedor
                 )
-                for i in store.almacen.values()
+                for i in store.get_almacen().values()
             ]
 
         elif tipo == "Entradas":
@@ -116,7 +116,7 @@ class ReportesView(QWidget):
                     i.ubicacion,
                     i.proveedor
                 )
-                for i in store.almacen.values()
+                for i in store.get_almacen().values()
                 if i.cantidad <= i.stock_minimo
             ]
 
@@ -169,6 +169,7 @@ class ReportesView(QWidget):
 
     def export_almacen(self, path):
         headers = ["Partida", "Descripción", "Unidad", "Cantidad", "Stock Mín.", "Ubicación", "Proveedor"]
+        almacen = store.get_almacen()
         rows = [
             (
                 i.partida,
@@ -179,7 +180,7 @@ class ReportesView(QWidget):
                 i.ubicacion,
                 i.proveedor
             )
-            for i in store.almacen.values()
+            for i in almacen.values()
         ]
         export_to_excel(headers, rows, path)
 
@@ -240,7 +241,7 @@ class ReportesView(QWidget):
                 i.ubicacion,
                 i.proveedor
             )
-            for i in store.almacen.values()
+            for i in store.get_almacen().values()
             if i.cantidad <= i.stock_minimo
         ]
         export_to_excel(headers, rows, path)

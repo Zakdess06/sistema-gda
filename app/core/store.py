@@ -95,16 +95,35 @@ class Prestamo:
 # ===================== STORE =====================
 
 class Store:
+    def seed_demo(self):
+        # Método de compatibilidad, ya no hace nada relevante
+        pass
+
+    def add_producto(self, item):
+        from app.core.almacen_db import insert_almacen_item
+        insert_almacen_item(item)
+        self.notify()
+
+    def update_producto(self, item):
+        from app.core.almacen_db import update_almacen_item
+        update_almacen_item(item)
+        self.notify()
+
+    def delete_producto(self, partida):
+        from app.core.almacen_db import delete_almacen_item
+        delete_almacen_item(partida)
+        self.notify()
+
     def __init__(self):
-        self.almacen: Dict[str, AlmacenItem] = {}
+        from app.core.almacen_db import fetch_all_almacen
         self.entradas: List[Entrada] = []
         self.salidas: List[Salida] = []
         self.herramientas: Dict[str, Herramienta] = {}
         self.trabajadores: Dict[str, Trabajador] = {}
         self.proveedores: Dict[str, Proveedor] = {}
         self.prestamos: List[Prestamo] = []
-
         self._subscribers: List[Callable] = []
+        self._almacen_cache = None  # Solo para compatibilidad, pero siempre se consulta la base
 
     # ---------- OBSERVERS ----------
     def subscribe(self, callback: Callable):
@@ -115,81 +134,43 @@ class Store:
         for cb in self._subscribers:
             cb()
 
-    # ---------- DEMO ----------
-    def seed_demo(self):
-        self.almacen.clear()
-        self.herramientas.clear()
-        self.trabajadores.clear()
-        self.proveedores.clear()
-        self.prestamos.clear()
+    # ---------- HERRAMIENTAS (BASE DE DATOS) ----------
+    def get_herramientas(self):
+        from app.core.herramienta_db import fetch_all_herramientas
+        return {item.codigo: item for item in fetch_all_herramientas()}
 
-        # ===== PRODUCTOS =====
-        demo = [
-            AlmacenItem("E-001", "Arnés eléctrico", "Pza", 15, "Estante A", "Bosch", 10),
-            AlmacenItem("E-002", "Sensor de oxígeno", "Pza", 10, "Estante B", "Denso", 5),
-            AlmacenItem("E-003", "Relay 12V", "Pza", 40, "Gaveta 3", "Hella", 15),
-            AlmacenItem("E-004", "Fusible 30A", "Pza", 120, "Caja Fusibles", "Truper", 50),
-        ]
-
-        for item in demo:
-            self.almacen[item.partida] = item
-
-        # ===== TRABAJADORES =====
-        trabajadores_demo = [
-            Trabajador("T001", "Carlos Rodríguez", "1234567890"),
-            Trabajador("T002", "María González", "0987654321"),
-            Trabajador("T003", "Juan Pérez", "1122334455"),
-            Trabajador("T004", "Ana Martínez", "5544332211"),
-        ]
-
-        for trab in trabajadores_demo:
-            self.trabajadores[trab.id] = trab
-
-        # ===== PROVEEDORES =====
-        proveedores_demo = [
-            Proveedor("P001", "Bosch México", "Bosch S.A. de C.V.", "CDMX", "55-1234-5678"),
-            Proveedor("P002", "Denso Industrial", "Denso Ltd.", "Monterrey", "81-8765-4321"),
-            Proveedor("P003", "Hella Distribuidora", "Hella México S.A.", "Guadalajara", "33-3456-7890"),
-            Proveedor("P004", "Truper Distribución", "Truper S.A. de C.V.", "León", "477-7654-3210"),
-        ]
-
-        for prov in proveedores_demo:
-            self.proveedores[prov.id] = prov
-
-        # ===== HERRAMIENTAS =====
-        herramientas_demo = [
-            Herramienta("H-001", "Multímetro Digital", "Gaveta Herramientas", 2),
-            Herramienta("H-002", "Destornillador Phillips", "Caja Herramientas", 5),
-            Herramienta("H-003", "Pinza Amperimétrica", "Gaveta Herramientas", 1),
-            Herramienta("H-004", "Soldador Eléctrico", "Banco de Trabajo", 1),
-        ]
-
-        for herra in herramientas_demo:
-            self.herramientas[herra.codigo] = herra
-
-        bitacora.log("Sistema", "Datos de demo cargados")
+    def add_herramienta(self, h):
+        from app.core.herramienta_db import insert_herramienta
+        insert_herramienta(h)
+        bitacora.log("Herramienta", f"Alta de herramienta {h.codigo} - {h.descripcion}")
         self.notify()
 
-    # ---------- ALMACÉN ----------
+    def update_herramienta(self, h):
+        from app.core.herramienta_db import update_herramienta
+        update_herramienta(h)
+        self.notify()
+
+    def delete_herramienta(self, codigo):
+        from app.core.herramienta_db import delete_herramienta
+        delete_herramienta(codigo)
+        self.notify()
+    def get_almacen(self):
+        from app.core.almacen_db import fetch_all_almacen
+        return {item.partida: item for item in fetch_all_almacen()}
+
     def add_entrada(self, entrada: Entrada):
-        if entrada.partida not in self.almacen:
+        from app.core.almacen_db import update_almacen_cantidad
+        almacen = self.get_almacen()
+        if entrada.partida not in almacen:
             raise KeyError("Partida no registrada")
-
-        item = self.almacen[entrada.partida]
-        item.cantidad += entrada.cantidad
-
-        if entrada.proveedor:
-            item.proveedor = entrada.proveedor
-        if entrada.ubicacion:
-            item.ubicacion = entrada.ubicacion
-
+        item = almacen[entrada.partida]
+        nueva_cantidad = item.cantidad + entrada.cantidad
+        update_almacen_cantidad(entrada.partida, nueva_cantidad)
         self.entradas.append(entrada)
-
         bitacora.log(
             "Entrada",
             f"{entrada.partida} +{entrada.cantidad} {entrada.unidad} | Recibió: {entrada.recibio}"
         )
-
         self.notify()
 
     def add_salida(self, salida: Salida):

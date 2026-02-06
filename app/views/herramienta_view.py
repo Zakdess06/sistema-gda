@@ -71,15 +71,15 @@ class HerramientasView(QWidget):
     # ---------- DATA ----------
     def load_data(self):
         self.table.setRowCount(0)
-        for h in store.herramientas.values():
+        herramientas = store.get_herramientas()
+        for h in herramientas.values():
             row = self.table.rowCount()
             self.table.insertRow(row)
-
             self.table.setItem(row, 0, QTableWidgetItem(h.codigo))
             self.table.setItem(row, 1, QTableWidgetItem(h.descripcion))
             self.table.setItem(row, 2, QTableWidgetItem(h.ubicacion))
             self.table.setItem(row, 3, QTableWidgetItem(str(h.cantidad)))
-            self.table.setItem(row, 4, QTableWidgetItem(h.observaciones))
+            self.table.setItem(row, 4, QTableWidgetItem(getattr(h, 'observaciones', '')))
 
     def selected_codigo(self):
         row = self.table.currentRow()
@@ -98,7 +98,8 @@ class HerramientasView(QWidget):
             QMessageBox.warning(self, "Error", "Complete todos los campos obligatorios")
             return
 
-        if codigo in store.herramientas:
+        herramientas = store.get_herramientas()
+        if codigo in herramientas:
             QMessageBox.warning(self, "Error", f"El código {codigo} ya existe")
             return
 
@@ -123,36 +124,32 @@ class HerramientasView(QWidget):
         if not codigo:
             QMessageBox.warning(self, "Error", "Seleccione una herramienta")
             return
-
-        herramienta = store.herramientas.get(codigo)
+        herramientas = store.get_herramientas()
+        herramienta = herramientas.get(codigo)
         if not herramienta:
             QMessageBox.warning(self, "Error", "Herramienta no encontrada")
             return
-
         # Cargar datos en formulario
         self.txt_codigo.setText(herramienta.codigo)
         self.txt_codigo.setReadOnly(True)
         self.txt_descripcion.setText(herramienta.descripcion)
         self.txt_ubicacion.setText(herramienta.ubicacion)
         self.spin_cantidad.setValue(herramienta.cantidad)
-        self.txt_obs.setText(herramienta.observaciones)
+        self.txt_obs.setText(getattr(herramienta, 'observaciones', ''))
 
     def eliminar(self):
         codigo = self.selected_codigo()
         if not codigo:
             QMessageBox.warning(self, "Error", "Seleccione una herramienta")
             return
-
         confirm = QMessageBox.question(
             self,
             "Confirmar eliminación",
             f"¿Eliminar la herramienta {codigo}?",
             QMessageBox.Yes | QMessageBox.No
         )
-
         if confirm == QMessageBox.Yes:
-            store.herramientas.pop(codigo, None)
-            store.notify()
+            store.delete_herramienta(codigo)
             bitacora.log("Herramienta", f"Herramienta eliminada: {codigo}")
             self.clear_form()
 

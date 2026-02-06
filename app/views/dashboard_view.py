@@ -71,21 +71,24 @@ class DashboardView(QWidget):
         self.update_data()
 
     def update_data(self):
-        self.card_productos.set_value(len(store.almacen))
+        almacen = store.get_almacen()
+        herramientas = store.get_herramientas()
+        self.card_productos.set_value(len(almacen))
         self.card_stock.set_value(
-            sum(i.cantidad for i in store.almacen.values())
+            sum(i.cantidad for i in almacen.values())
         )
         self.card_entradas.set_value(len(store.entradas))
         self.card_salidas.set_value(len(store.salidas))
-        self.card_herramientas.set_value(len(store.herramientas))
+        self.card_herramientas.set_value(len(herramientas))
         self.card_prestadas.set_value(
-            sum(1 for h in store.herramientas.values()
-                if h.estado == "Prestada")
+            sum(1 for h in herramientas.values()
+                if getattr(h, "estado", None) == "Prestada")
         )
 
         # ALERTAS DE STOCK BAJO
         try:
-            alertas = store.productos_stock_bajo()
+            # productos_stock_bajo expects a dict like almacen
+            alertas = [item for item in almacen.values() if item.cantidad <= 5]
             self.card_alertas.set_value(len(alertas))
         except Exception:
             self.card_alertas.set_value(0)

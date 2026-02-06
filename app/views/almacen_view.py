@@ -63,11 +63,10 @@ class AlmacenView(QWidget):
 
     def load_data(self):
         self.table.setRowCount(0)
-
-        for item in store.almacen.values():
+        almacen = store.get_almacen()
+        for item in almacen.values():
             row = self.table.rowCount()
             self.table.insertRow(row)
-
             # ----- COLUMNA DE ADVERTENCIA -----
             warning_item = QTableWidgetItem()
             if item.cantidad <= item.stock_minimo:
@@ -75,26 +74,20 @@ class AlmacenView(QWidget):
                 warning_item.setForeground(Qt.red)
                 warning_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 0, warning_item)
-
             self.table.setItem(row, 1, QTableWidgetItem(item.partida))
             self.table.setItem(row, 2, QTableWidgetItem(item.descripcion))
             self.table.setItem(row, 3, QTableWidgetItem(item.unidad))
-
             # ----- CANTIDAD CON ALERTA -----
             cantidad_item = QTableWidgetItem(str(item.cantidad))
             cantidad_item.setTextAlignment(Qt.AlignCenter)
-
             if item.cantidad <= item.stock_minimo:
                 cantidad_item.setForeground(Qt.red)
                 cantidad_item.setBackground(QColor(255, 200, 200))  # Fondo rojo claro
-
             self.table.setItem(row, 4, cantidad_item)
-
             # ----- STOCK MÍNIMO -----
             stock_min_item = QTableWidgetItem(str(item.stock_minimo))
             stock_min_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 5, stock_min_item)
-
             self.table.setItem(row, 6, QTableWidgetItem(item.ubicacion))
             self.table.setItem(row, 7, QTableWidgetItem(item.proveedor))
 
@@ -103,6 +96,8 @@ class AlmacenView(QWidget):
     def add_product(self):
         dialog = ProductoDialog(self)
         if dialog.exec():
+            # Guardar en base de datos
+            store.add_producto(dialog.producto)
             bitacora.log("Almacén", f"Nuevo producto agregado: {dialog.txt_partida.text()}")
 
     def restock_selected(self):
@@ -110,17 +105,15 @@ class AlmacenView(QWidget):
         if selected < 0:
             QMessageBox.warning(self, "Error", "Seleccione un producto para hacer restock")
             return
-
         partida = self.table.item(selected, 1).text()
-        producto = store.almacen.get(partida)
-
+        almacen = store.get_almacen()
+        producto = almacen.get(partida)
         if not producto:
             QMessageBox.warning(self, "Error", "Producto no encontrado")
             return
-
         dialog = RestockDialog(self, producto)
         if dialog.exec():
-            store.notify()
+            store.update_producto(producto)
             bitacora.log("Almacén", f"Restock realizado: {partida} - +{dialog.spin_cantidad.value()} unidades")
 
     def edit_selected(self):
@@ -128,16 +121,15 @@ class AlmacenView(QWidget):
         if selected < 0:
             QMessageBox.warning(self, "Error", "Seleccione un producto para editar")
             return
-
         partida = self.table.item(selected, 1).text()
-        producto = store.almacen.get(partida)
-
+        almacen = store.get_almacen()
+        producto = almacen.get(partida)
         if not producto:
             QMessageBox.warning(self, "Error", "Producto no encontrado")
             return
-
         dialog = ProductoDialog(self, producto)
         if dialog.exec():
+            store.update_producto(producto)
             bitacora.log("Almacén", f"Producto editado: {partida}")
 
     def delete_selected(self):
@@ -145,19 +137,15 @@ class AlmacenView(QWidget):
         if selected < 0:
             QMessageBox.warning(self, "Error", "Seleccione un producto para eliminar")
             return
-
-        partida = self.table.item(selected, 0).text()
-
+        partida = self.table.item(selected, 1).text()
         confirm = QMessageBox.question(
             self,
             "Confirmar eliminación",
             f"¿Eliminar la partida {partida}?\n\nEsta acción no se puede deshacer.",
             QMessageBox.Yes | QMessageBox.No
         )
-
         if confirm == QMessageBox.Yes:
-            store.almacen.pop(partida, None)
-            store.notify()
+            store.delete_producto(partida)
             bitacora.log("Almacén", f"Producto eliminado: {partida}")
 
     def showEvent(self, event):

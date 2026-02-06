@@ -93,14 +93,16 @@ class SalidasView(QWidget):
 
     def load_partidas(self):
         self.cmb_partida.clear()
-        for partida in store.almacen.keys():
+        almacen = store.get_almacen()
+        for partida in almacen.keys():
             self.cmb_partida.addItem(partida)
 
         if self.cmb_partida.count() > 0:
             self.update_descripcion(self.cmb_partida.currentText())
 
     def update_descripcion(self, partida):
-        item = store.almacen.get(partida)
+        almacen = store.get_almacen()
+        item = almacen.get(partida)
         if not item:
             self.txt_descripcion.clear()
             self.btn_salida.setEnabled(False)
@@ -158,7 +160,8 @@ class SalidasView(QWidget):
             QMessageBox.warning(self, "Error", "El nombre de quien entrega es obligatorio")
             return
 
-        disponible = store.almacen[partida].cantidad
+        almacen = store.get_almacen()
+        disponible = almacen[partida].cantidad
         cantidad = self.spin_cantidad.value()
 
         if cantidad > disponible:
@@ -181,12 +184,13 @@ class SalidasView(QWidget):
             return
 
         try:
+            almacen = store.get_almacen()
             salida = Salida(
                 fecha=datetime.now().strftime("%Y-%m-%d %H:%M"),
                 partida=partida,
                 descripcion=self.txt_descripcion.text(),
                 cantidad=cantidad,
-                unidad=store.almacen[partida].unidad,
+                unidad=almacen[partida].unidad,
                 trabajador_id=id_trabajador,
                 trabajador_nombre=nombre_trabajador,
                 proyecto=proyecto,

@@ -66,14 +66,16 @@ class EntradasView(QWidget):
     # ---------- CARGAS ----------
     def load_partidas(self):
         self.cmb_partida.clear()
-        for partida in store.almacen.keys():
+        almacen = store.get_almacen()
+        for partida in almacen.keys():
             self.cmb_partida.addItem(partida)
 
         if self.cmb_partida.count() > 0:
             self.update_descripcion(self.cmb_partida.currentText())
 
     def update_descripcion(self, partida):
-        item = store.almacen.get(partida)
+        almacen = store.get_almacen()
+        item = almacen.get(partida)
         if item:
             self.txt_descripcion.setText(item.descripcion)
 
@@ -98,12 +100,13 @@ class EntradasView(QWidget):
             return
 
         try:
+            almacen = store.get_almacen()
             entrada = Entrada(
                 fecha=str(date.today()),
                 partida=partida,
                 descripcion=self.txt_descripcion.text(),
                 cantidad=self.spin_cantidad.value(),
-                unidad=store.almacen[partida].unidad,
+                unidad=almacen[partida].unidad,
                 proveedor=self.txt_proveedor.text(),
                 recibio=self.txt_recibio.text(),
                 ubicacion=self.txt_ubicacion.text(),
