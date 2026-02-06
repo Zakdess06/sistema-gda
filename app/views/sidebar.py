@@ -18,6 +18,7 @@ class Sidebar(QWidget):
             "Entradas": "entradas",
             "Salidas": "salidas",
             "Herramientas": "herramientas",
+            "Préstamos": "prestamos",
             "Reportes": "reportes",
             "Bitácora": "bitacora",          
             "Configuración": "configuracion",

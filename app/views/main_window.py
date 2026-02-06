@@ -8,6 +8,7 @@ from app.views.almacen_view import AlmacenView
 from app.views.entradas_view import EntradasView
 from app.views.salidas_view import SalidasView
 from app.views.herramienta_view import HerramientasView
+from app.views.prestamo_herramienta_view import PrestamoHerramientaView
 from app.views.reportes_view import ReportesView
 from app.views.configuracion_view import ConfiguracionView
 from app.views.bitacora_view import BitacoraView
@@ -42,6 +43,7 @@ class MainWindow(QMainWindow):
             "entradas": EntradasView(),
             "salidas": SalidasView(),
             "herramientas": HerramientasView(),
+            "prestamos": PrestamoHerramientaView(),
             "reportes": ReportesView(),
             "bitacora": BitacoraView(),
             "configuracion": ConfiguracionView(),

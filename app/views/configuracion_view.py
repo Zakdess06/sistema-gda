@@ -36,7 +36,7 @@ class ConfiguracionView(QWidget):
         lbl_titulo.setAlignment(Qt.AlignCenter)
         lbl_titulo.setStyleSheet("font-size: 22px; font-weight: bold; color: white;")
 
-        lbl_version = QLabel("Versión: Demo 1.0")
+        lbl_version = QLabel("Versión: Demo 2.1")
         lbl_version.setAlignment(Qt.AlignCenter)
         lbl_version.setStyleSheet("color: #ccc;")
 

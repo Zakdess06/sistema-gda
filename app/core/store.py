@@ -53,6 +53,7 @@ class Herramienta:
     ubicacion: str
     cantidad: int
     estado: str = "Disponible"
+    prestada: bool = False
     observaciones: str = ""
 
 
@@ -80,10 +81,15 @@ class Prestamo:
     trabajador_despacha_id: str
     trabajador_recibe_id: str
     fecha_prestamo: str
+    fecha_regreso_estimada: str = ""
     fecha_devolucion: str = ""
     estado_herramienta_prestamo: str = "Bueno"
     estado_herramienta_devolucion: str = ""
     comentarios: str = ""
+    
+    def es_activo(self) -> bool:
+        """Indica si el préstamo está activo (sin devolver)"""
+        return self.fecha_devolucion == ""
 
 
 # ===================== STORE =====================
@@ -223,7 +229,7 @@ class Store:
         self.notify()
 
     # ---------- PRÉSTAMOS ----------
-    def solicitar_prestamo(self, herramienta_codigo: str, trabajador_solicita_id: str, trabajador_despacha_id: str, estado_herramienta: str = "Bueno"):
+    def solicitar_prestamo(self, herramienta_codigo: str, trabajador_solicita_id: str, trabajador_despacha_id: str, estado_herramienta: str = "Bueno", fecha_regreso_estimada: str = ""):
         """Crear un nuevo préstamo de herramienta"""
         if herramienta_codigo not in self.herramientas:
             raise KeyError("Herramienta no encontrada")
@@ -248,10 +254,12 @@ class Store:
             trabajador_despacha_id=trabajador_despacha_id,
             trabajador_recibe_id="",
             fecha_prestamo=datetime.now().strftime("%Y-%m-%d %H:%M"),
+            fecha_regreso_estimada=fecha_regreso_estimada,
             estado_herramienta_prestamo=estado_herramienta
         )
 
         herramienta.cantidad -= 1
+        herramienta.prestada = True
         self.prestamos.append(prestamo)
 
         bitacora.log(
@@ -285,6 +293,7 @@ class Store:
         herramienta = self.herramientas.get(prestamo.herramienta_codigo)
         if herramienta:
             herramienta.cantidad += 1
+            herramienta.prestada = False
 
         bitacora.log(
             "Devolución",
