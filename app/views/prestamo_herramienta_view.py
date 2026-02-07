@@ -3,9 +3,9 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
     QTableWidget, QTableWidgetItem, QPushButton, QMessageBox,
-    QComboBox, QLabel, QTextEdit, QSpinBox, QDateEdit
+    QComboBox, QLabel, QTextEdit, QSpinBox, QDateTimeEdit
 )
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDateTime, QTimer
 from datetime import datetime
 
 from app.core.store import store
@@ -42,6 +42,13 @@ class PrestamoHerramientaView(QWidget):
         # Subscribirse a cambios en store
         store.subscribe(self.cargar_datos)
         self.cargar_datos()
+
+        # Timer para revisar préstamos vencidos cada minuto
+        self._vencidos_timer = QTimer(self)
+        self._vencidos_timer.timeout.connect(self.check_overdue)
+        self._vencidos_timer.start(60 * 1000)
+        # comprobación inicial
+        self.check_overdue()
 
     # ========== TAB 1: SOLICITAR PRÉSTAMO ==========
     def crear_tab_solicitar(self) -> QWidget:
@@ -96,11 +103,22 @@ class PrestamoHerramientaView(QWidget):
         # Fecha de regreso estimada
         h_layout5 = QHBoxLayout()
         h_layout5.addWidget(QLabel("Fecha de regreso estimada:"))
-        self.date_regreso_estimada = QDateEdit()
-        self.date_regreso_estimada.setDate(QDate.currentDate())
+        self.date_regreso_estimada = QDateTimeEdit()
+        self.date_regreso_estimada.setDateTime(QDateTime.currentDateTime())
+        self.date_regreso_estimada.setDisplayFormat("yyyy-MM-dd HH:mm")
         h_layout5.addWidget(self.date_regreso_estimada)
         h_layout5.addStretch()
         layout.addLayout(h_layout5)
+
+        # Cantidad a prestar
+        h_layout6 = QHBoxLayout()
+        h_layout6.addWidget(QLabel("Cantidad a prestar:"))
+        self.spin_cantidad_prestamo = QSpinBox()
+        self.spin_cantidad_prestamo.setRange(1, 999999)
+        self.spin_cantidad_prestamo.setValue(1)
+        h_layout6.addWidget(self.spin_cantidad_prestamo)
+        h_layout6.addStretch()
+        layout.addLayout(h_layout6)
 
         # Botones
         h_layout_btn = QHBoxLayout()
@@ -252,9 +270,18 @@ class PrestamoHerramientaView(QWidget):
         self.combo_herramienta.blockSignals(True)
         self.combo_herramienta.clear()
 
-        herramientas = self.controller.obtener_herramientas_disponibles()
-        for h in herramientas:
-            self.combo_herramienta.addItem(f"{h.codigo} - {h.descripcion}", h.codigo)
+        # Obtener desde almacen (partidas) sólo las con stock > 0
+        try:
+            almacen = store.get_almacen()
+            for item in almacen.values():
+                if item.cantidad > 0:
+                    # usar la partida como código identificador
+                    self.combo_herramienta.addItem(f"{item.partida} - {item.descripcion}", item.partida)
+        except Exception:
+            # fallback: usar herramientas
+            herramientas = self.controller.obtener_herramientas_disponibles()
+            for h in herramientas:
+                self.combo_herramienta.addItem(f"{h.codigo} - {h.descripcion}", h.codigo)
 
         self.combo_herramienta.blockSignals(False)
         self.actualizar_detalles_herramienta()
@@ -309,6 +336,26 @@ class PrestamoHerramientaView(QWidget):
         if herramienta:
             self.lbl_ubicacion.setText(herramienta.ubicacion)
             self.lbl_cantidad.setText(str(herramienta.cantidad))
+            try:
+                # actualizar maximo de cantidad a prestar
+                self.spin_cantidad_prestamo.setMaximum(int(herramienta.cantidad))
+                self.spin_cantidad_prestamo.setValue(min(self.spin_cantidad_prestamo.value(), herramienta.cantidad))
+                self.btn_solicitar.setEnabled(herramienta.cantidad > 0)
+            except Exception:
+                pass
+        else:
+            # quizás viene de almacen
+            almacen = store.get_almacen()
+            item = almacen.get(codigo)
+            if item:
+                self.lbl_ubicacion.setText(item.ubicacion)
+                self.lbl_cantidad.setText(str(item.cantidad))
+                try:
+                    self.spin_cantidad_prestamo.setMaximum(int(item.cantidad))
+                    self.spin_cantidad_prestamo.setValue(min(self.spin_cantidad_prestamo.value(), item.cantidad))
+                    self.btn_solicitar.setEnabled(item.cantidad > 0)
+                except Exception:
+                    pass
 
     def actualizar_detalles_prestamo(self):
         """Actualiza los detalles del préstamo seleccionado"""
@@ -333,6 +380,11 @@ class PrestamoHerramientaView(QWidget):
         self.lbl_solicita_devolver.setText(trab_solicita.nombre if trab_solicita else prestamo.trabajador_solicita_id)
         self.lbl_despacha_devolver.setText(trab_despacha.nombre if trab_despacha else prestamo.trabajador_despacha_id)
         self.lbl_fecha_prestamo.setText(prestamo.fecha_prestamo)
+        # mostrar fecha de regreso estimada con hora si existe
+        if getattr(prestamo, 'fecha_regreso_estimada', None):
+            self.lbl_fecha_regreso_estimada.setText(prestamo.fecha_regreso_estimada)
+        else:
+            self.lbl_fecha_regreso_estimada.setText("-")
 
     def limpiar_detalles_prestamo(self):
         """Limpia los detalles del préstamo"""
@@ -364,6 +416,18 @@ class PrestamoHerramientaView(QWidget):
             self.table_activos.setItem(row, 3, QTableWidgetItem(trab_despacha.nombre if trab_despacha else prestamo.trabajador_despacha_id))
             self.table_activos.setItem(row, 4, QTableWidgetItem(prestamo.fecha_prestamo))
             self.table_activos.setItem(row, 5, QTableWidgetItem(prestamo.estado_herramienta_prestamo))
+
+            # resaltar si está vencido
+            try:
+                from app.controllers.prestamo_herramienta_controller import PrestamoHerramientaController
+                vencidos = [p.id for p in PrestamoHerramientaController.listar_prestamos_vencidos()]
+                if prestamo.id in vencidos:
+                    for col in range(self.table_activos.columnCount()):
+                        it = self.table_activos.item(row, col)
+                        if it:
+                            it.setBackground(Qt.red)
+            except Exception:
+                pass
 
     def cargar_historial(self):
         """Carga la tabla de historial"""
@@ -405,12 +469,14 @@ class PrestamoHerramientaView(QWidget):
         trabajador_solicita_id = self.combo_trabajador_solicita.currentData()
         trabajador_despacha_id = self.combo_trabajador_despacha.currentData()
         estado = self.combo_estado_prestamo.currentText()
-        fecha_regreso = self.date_regreso_estimada.date().toString("yyyy-MM-dd")
+        fecha_regreso = self.date_regreso_estimada.dateTime().toString("yyyy-MM-dd HH:mm")
+        cantidad = int(self.spin_cantidad_prestamo.value())
 
         success, message, prestamo_id = self.controller.solicitar_prestamo(
             herramienta_codigo=herramienta_codigo,
             trabajador_solicita_id=trabajador_solicita_id,
             trabajador_despacha_id=trabajador_despacha_id,
+            cantidad=cantidad,
             estado_herramienta=estado,
             fecha_regreso_estimada=fecha_regreso
         )
@@ -420,6 +486,29 @@ class PrestamoHerramientaView(QWidget):
             self.cargar_datos()
         else:
             QMessageBox.warning(self, "Error", message)
+
+    def check_overdue(self):
+        """Revisa préstamos vencidos y muestra alerta si hay alguno."""
+        try:
+            from app.controllers.prestamo_herramienta_controller import PrestamoHerramientaController
+            vencidos = PrestamoHerramientaController.listar_prestamos_vencidos()
+            if not vencidos:
+                return
+
+            lines = []
+            for p in vencidos:
+                lines.append(f"{p.id} - {p.herramienta_codigo} | Regreso estimado: {p.fecha_regreso_estimada} | Solicitó: {p.trabajador_solicita_id}")
+
+            QMessageBox.warning(
+                self,
+                "Préstamos vencidos",
+                "Se encontraron préstamos vencidos:\n\n" + "\n".join(lines)
+            )
+
+            # refrescar tablas para mostrar resaltado
+            self.cargar_prestamos_activos()
+        except Exception:
+            pass
 
     def registrar_devolucion(self):
         """Maneja el registro de devolución"""

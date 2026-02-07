@@ -31,7 +31,19 @@ class ProductoDialog(QDialog):
         self.spin_cantidad = QSpinBox()
         self.spin_stock_minimo = QSpinBox()
         self.txt_ubicacion = QLineEdit()
-        self.txt_proveedor = QLineEdit()
+        self.cmb_proveedor = QComboBox()
+        self.cmb_proveedor.setEditable(True)
+
+        # cargar proveedores existentes
+        try:
+            from app.core.proveedor_db import fetch_all_proveedores
+            provs = fetch_all_proveedores()
+            for p in provs:
+                name = p.get('nombre_comercial') or ''
+                if name:
+                    self.cmb_proveedor.addItem(name)
+        except Exception:
+            pass
 
         # Unidades comunes
         unidades = ["Pza", "Kg", "Mt", "Lt", "Caja", "Rollo", "Tubo", "Otro"]
@@ -45,7 +57,7 @@ class ProductoDialog(QDialog):
         self.txt_partida.setPlaceholderText("Ej: E-001")
         self.txt_descripcion.setPlaceholderText("Descripción del producto")
         self.txt_ubicacion.setPlaceholderText("Ej: Estante A, Gaveta 3")
-        self.txt_proveedor.setPlaceholderText("Nombre del proveedor")
+        self.cmb_proveedor.setEditText("")
 
         # Cargar datos si es edición
         if producto:
@@ -55,7 +67,12 @@ class ProductoDialog(QDialog):
             self.cmb_unidad.setCurrentText(producto.unidad)
             self.spin_cantidad.setValue(producto.cantidad)
             self.txt_ubicacion.setText(producto.ubicacion)
-            self.txt_proveedor.setText(producto.proveedor)
+            # intentar seleccionar proveedor en combo
+            try:
+                if producto.proveedor:
+                    self.cmb_proveedor.setCurrentText(producto.proveedor)
+            except Exception:
+                self.cmb_proveedor.setEditText(producto.proveedor or "")
 
         layout.addRow("Partida:", self.txt_partida)
         layout.addRow("Descripción:", self.txt_descripcion)
@@ -63,7 +80,7 @@ class ProductoDialog(QDialog):
         layout.addRow("Cantidad Actual:", self.spin_cantidad)
         layout.addRow("Stock Mínimo:", self.spin_stock_minimo)
         layout.addRow("Ubicación:", self.txt_ubicacion)
-        layout.addRow("Proveedor:", self.txt_proveedor)
+        layout.addRow("Proveedor:", self.cmb_proveedor)
 
         # Botones
         btn_layout = QHBoxLayout()
@@ -90,7 +107,7 @@ class ProductoDialog(QDialog):
         cantidad = self.spin_cantidad.value()
         stock_minimo = self.spin_stock_minimo.value()
         ubicacion = self.txt_ubicacion.text().strip()
-        proveedor = self.txt_proveedor.text().strip()
+        proveedor = self.cmb_proveedor.currentText().strip()
 
         if not partida:
             QMessageBox.warning(self, "Error", "La partida es obligatoria")
@@ -109,45 +126,49 @@ class ProductoDialog(QDialog):
             return
 
         # Verificar si partida ya existe (solo en agregar nuevo)
-        if not self.producto and partida in store.almacen:
+        almacen = store.get_almacen()
+        if not self.producto and partida in almacen:
             QMessageBox.warning(self, "Error", f"La partida {partida} ya existe")
             return
 
         # Crear o actualizar producto
         if self.producto:
-            # Edición
+            # Edición: actualizar campos y persistir
             self.producto.descripcion = descripcion
             self.producto.unidad = unidad
             self.producto.cantidad = cantidad
             self.producto.ubicacion = ubicacion
             self.producto.proveedor = proveedor
+            self.producto.stock_minimo = stock_minimo
+            store.update_producto(self.producto)
         else:
-            # Creación
+            # Creación: crear item y persistir
             nuevo = AlmacenItem(
                 partida=partida,
                 descripcion=descripcion,
                 unidad=unidad,
                 cantidad=cantidad,
                 ubicacion=ubicacion,
-                proveedor=proveedor
+                proveedor=proveedor,
+                stock_minimo=stock_minimo
             )
-            store.almacen[partida] = nuevo
+            store.add_producto(nuevo)
 
-        store.notify()
         self.accept()
-
-        layout.addRow(btn_layout)
 
     def get_data(self):
         return (
-            self.descripcion.text().strip(),
-            self.cantidad.value(),
-            self.ubicacion.text().strip(),
-            self.proveedor.text().strip()
+            self.txt_descripcion.text().strip(),
+            self.spin_cantidad.value(),
+            self.txt_ubicacion.text().strip(),
+            self.cmb_proveedor.currentText().strip()
         )
 
     def set_data(self, d, c, u, p):
-        self.descripcion.setText(d)
-        self.cantidad.setValue(int(c))
-        self.ubicacion.setText(u)
-        self.proveedor.setText(p)
+        self.txt_descripcion.setText(d)
+        self.spin_cantidad.setValue(int(c))
+        self.txt_ubicacion.setText(u)
+        try:
+            self.cmb_proveedor.setCurrentText(p)
+        except Exception:
+            self.cmb_proveedor.setEditText(p or "")

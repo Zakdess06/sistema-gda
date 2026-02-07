@@ -8,6 +8,7 @@ from datetime import date
 
 from app.core.store import store, Entrada
 from app.core.bitacora import bitacora
+from app.views.producto_dialog import ProductoDialog
 class EntradasView(QWidget):
     def __init__(self):
         super().__init__()
@@ -18,8 +19,8 @@ class EntradasView(QWidget):
         form = QFormLayout()
 
         self.cmb_partida = QComboBox()
+        self.cmb_partida.setEditable(True)
         self.txt_descripcion = QLineEdit()
-        self.txt_descripcion.setReadOnly(True)
 
         self.spin_cantidad = QSpinBox()
         self.spin_cantidad.setRange(1, 100000)
@@ -94,13 +95,36 @@ class EntradasView(QWidget):
 
     # ---------- ACCIÓN ----------
     def registrar_entrada(self):
-        partida = self.cmb_partida.currentText()
+        partida = self.cmb_partida.currentText().strip()
         if not partida:
-            QMessageBox.warning(self, "Error", "Seleccione una partida")
+            QMessageBox.warning(self, "Error", "Ingrese o seleccione una partida")
             return
 
         try:
             almacen = store.get_almacen()
+            # Si la partida no existe, ofrecer crear el producto completo
+            if partida not in almacen:
+                create = QMessageBox.question(
+                    self,
+                    "Partida no encontrada",
+                    f"La partida {partida} no existe. ¿Desea crear un nuevo producto?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                if create == QMessageBox.Yes:
+                    dialog = ProductoDialog(self)
+                    dialog.txt_partida.setText(partida)
+                    dialog.txt_ubicacion.setText(self.txt_ubicacion.text())
+                    try:
+                        dialog.cmb_proveedor.setCurrentText(self.txt_proveedor.text())
+                    except Exception:
+                        dialog.cmb_proveedor.setEditText(self.txt_proveedor.text())
+                    dialog.spin_cantidad.setValue(self.spin_cantidad.value())
+                    if not dialog.exec():
+                        return
+                    # recargar almacen con el nuevo producto
+                    almacen = store.get_almacen()
+                else:
+                    return
             entrada = Entrada(
                 fecha=str(date.today()),
                 partida=partida,

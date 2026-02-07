@@ -81,6 +81,7 @@ class Prestamo:
     trabajador_despacha_id: str
     trabajador_recibe_id: str
     fecha_prestamo: str
+    cantidad: int = 1
     fecha_regreso_estimada: str = ""
     fecha_devolucion: str = ""
     estado_herramienta_prestamo: str = "Bueno"
@@ -96,8 +97,16 @@ class Prestamo:
 
 class Store:
     def seed_demo(self):
-        # Método de compatibilidad, ya no hace nada relevante
-        pass
+        # Semilla mínima para pruebas: añadir algunos trabajadores temporales
+        # No sobreescribir si ya hay trabajadores cargados
+        if getattr(self, 'trabajadores', None):
+            return
+
+        self.trabajadores = {
+            'T001': Trabajador(id='T001', nombre='Juan Pérez'),
+            'T002': Trabajador(id='T002', nombre='María López'),
+            'T003': Trabajador(id='T003', nombre='Carlos Ruiz'),
+        }
 
     def add_producto(self, item):
         from app.core.almacen_db import insert_almacen_item
@@ -174,10 +183,13 @@ class Store:
         self.notify()
 
     def add_salida(self, salida: Salida):
-        if salida.partida not in self.almacen:
+        from app.core.almacen_db import update_almacen_cantidad
+
+        almacen = self.get_almacen()
+        if salida.partida not in almacen:
             raise KeyError("Partida no registrada")
 
-        item = self.almacen[salida.partida]
+        item = almacen[salida.partida]
 
         if salida.cantidad <= 0:
             raise ValueError("Cantidad inválida")
@@ -185,7 +197,10 @@ class Store:
         if salida.cantidad > item.cantidad:
             raise ValueError("Stock insuficiente")
 
-        item.cantidad -= salida.cantidad
+        nueva_cantidad = item.cantidad - salida.cantidad
+        update_almacen_cantidad(salida.partida, nueva_cantidad)
+
+        # reflejar en memoria de store (entradas/salidas list)
         self.salidas.append(salida)
 
         bitacora.log(
@@ -210,9 +225,17 @@ class Store:
         self.notify()
 
     # ---------- PRÉSTAMOS ----------
-    def solicitar_prestamo(self, herramienta_codigo: str, trabajador_solicita_id: str, trabajador_despacha_id: str, estado_herramienta: str = "Bueno", fecha_regreso_estimada: str = ""):
+    def solicitar_prestamo(self, herramienta_codigo: str, trabajador_solicita_id: str, trabajador_despacha_id: str, cantidad: int = 1, estado_herramienta: str = "Bueno", fecha_regreso_estimada: str = ""):
         """Crear un nuevo préstamo de herramienta"""
-        if herramienta_codigo not in self.herramientas:
+        # soportar préstamos tanto desde `herramientas` como desde `almacen`
+        from app.core.almacen_db import update_almacen_cantidad
+
+        almacen = self.get_almacen()
+
+        herramienta_en_herr = herramienta_codigo in self.herramientas
+        herramienta_en_alm = herramienta_codigo in almacen
+
+        if not herramienta_en_herr and not herramienta_en_alm:
             raise KeyError("Herramienta no encontrada")
         
         if trabajador_solicita_id not in self.trabajadores:
@@ -221,16 +244,28 @@ class Store:
         if trabajador_despacha_id not in self.trabajadores:
             raise KeyError("Trabajador despachador no encontrado")
 
-        herramienta = self.herramientas[herramienta_codigo]
-        if herramienta.cantidad <= 0:
-            raise ValueError("Herramienta no disponible")
+        # validar disponibilidad
+        disponible = 0
+        if herramienta_en_herr:
+            herramienta = self.herramientas[herramienta_codigo]
+            disponible = herramienta.cantidad
+        else:
+            item = almacen[herramienta_codigo]
+            disponible = item.cantidad
+
+        if cantidad <= 0:
+            raise ValueError("Cantidad inválida")
+
+        if cantidad > disponible:
+            raise ValueError("Herramienta no disponible en la cantidad solicitada")
 
         from datetime import datetime
         prestamo_id = f"PR-{len(self.prestamos) + 1:04d}"
-        
+
         prestamo = Prestamo(
             id=prestamo_id,
             herramienta_codigo=herramienta_codigo,
+            cantidad=cantidad,
             trabajador_solicita_id=trabajador_solicita_id,
             trabajador_despacha_id=trabajador_despacha_id,
             trabajador_recibe_id="",
@@ -239,8 +274,13 @@ class Store:
             estado_herramienta_prestamo=estado_herramienta
         )
 
-        herramienta.cantidad -= 1
-        herramienta.prestada = True
+        # actualizar stock según origen
+        if herramienta_en_herr:
+            herramienta.cantidad -= cantidad
+            herramienta.prestada = herramienta.cantidad <= 0
+        else:
+            nueva_cantidad = disponible - cantidad
+            update_almacen_cantidad(herramienta_codigo, nueva_cantidad)
         self.prestamos.append(prestamo)
 
         bitacora.log(
@@ -285,8 +325,9 @@ class Store:
 
     # ---------- ALERTAS ----------
     def productos_stock_bajo(self):
+        almacen = self.get_almacen()
         return [
-            item for item in self.almacen.values()
+            item for item in almacen.values()
             if item.cantidad <= config.stock_minimo
         ]
 

@@ -29,8 +29,17 @@ class SalidasView(QWidget):
 
         # ----- DATOS DEL MATERIAL -----
         self.cmb_partida = QComboBox()
+        self.cmb_partida.setEditable(True)
         self.txt_descripcion = QLineEdit()
         self.txt_descripcion.setReadOnly(True)
+
+        # Mostrar unidad, ubicación y stock para facilitar ubicación en almacén
+        self.txt_unidad = QLineEdit()
+        self.txt_unidad.setReadOnly(True)
+        self.txt_ubicacion = QLineEdit()
+        self.txt_ubicacion.setReadOnly(True)
+        self.txt_stock = QLineEdit()
+        self.txt_stock.setReadOnly(True)
 
         self.spin_cantidad = QSpinBox()
         self.spin_cantidad.setRange(1, 100000)
@@ -41,6 +50,9 @@ class SalidasView(QWidget):
 
         form.addRow("Partida:", self.cmb_partida)
         form.addRow("Descripción:", self.txt_descripcion)
+        form.addRow("Unidad:", self.txt_unidad)
+        form.addRow("Ubicación:", self.txt_ubicacion)
+        form.addRow("Disponible:", self.txt_stock)
         form.addRow("Cantidad:", self.spin_cantidad)
         form.addRow("Destino:", self.txt_destino)
         form.addRow("Entregó:", self.txt_entrego)
@@ -105,10 +117,16 @@ class SalidasView(QWidget):
         item = almacen.get(partida)
         if not item:
             self.txt_descripcion.clear()
+            self.txt_unidad.clear()
+            self.txt_ubicacion.clear()
+            self.txt_stock.clear()
             self.btn_salida.setEnabled(False)
             return
 
         self.txt_descripcion.setText(item.descripcion)
+        self.txt_unidad.setText(item.unidad)
+        self.txt_ubicacion.setText(item.ubicacion)
+        self.txt_stock.setText(str(item.cantidad))
 
         # bloquear si no hay stock
         self.btn_salida.setEnabled(item.cantidad > 0)
@@ -185,18 +203,49 @@ class SalidasView(QWidget):
 
         try:
             almacen = store.get_almacen()
+            item = almacen[partida]
+
+            # Preparar observaciones incluyendo ubicación (útil para picking)
+            ubicacion = item.ubicacion or self.txt_ubicacion.text()
+            obs_text = self.txt_obs.text().strip()
+            if ubicacion:
+                # anteponer la ubicación para que el personal la vea primero
+                obs_text = f"Ubicación: {ubicacion}. " + obs_text if obs_text else f"Ubicación: {ubicacion}."
+
+            # Mostrar confirmación final con datos relevantes
+            detalles = (
+                f"Partida: {partida}\n"
+                f"Descripción: {item.descripcion}\n"
+                f"Unidad: {item.unidad}\n"
+                f"Disponible: {item.cantidad}\n"
+                f"Cantidad a sacar: {cantidad}\n"
+                f"Ubicación: {ubicacion or 'N/A'}\n"
+                f"Destino: {self.txt_destino.text()}\n"
+                f"Entregó: {self.txt_entrego.text()}\n"
+            )
+
+            confirmar = QMessageBox.question(
+                self,
+                "Confirmar salida",
+                f"Confirma la siguiente salida?\n\n{detalles}",
+                QMessageBox.Yes | QMessageBox.No
+            )
+
+            if confirmar != QMessageBox.Yes:
+                return
+
             salida = Salida(
                 fecha=datetime.now().strftime("%Y-%m-%d %H:%M"),
                 partida=partida,
-                descripcion=self.txt_descripcion.text(),
+                descripcion=item.descripcion,
                 cantidad=cantidad,
-                unidad=almacen[partida].unidad,
+                unidad=item.unidad,
                 trabajador_id=id_trabajador,
                 trabajador_nombre=nombre_trabajador,
                 proyecto=proyecto,
                 destino=self.txt_destino.text(),
                 entrego=self.txt_entrego.text(),
-                observaciones=self.txt_obs.text(),
+                observaciones=obs_text,
             )
 
             store.add_salida(salida)

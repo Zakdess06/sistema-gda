@@ -19,7 +19,8 @@ class PrestamoHerramientaController:
 
     @staticmethod
     def solicitar_prestamo(herramienta_codigo: str, trabajador_solicita_id: str, 
-                           trabajador_despacha_id: str, estado_herramienta: str = "Bueno",
+                           trabajador_despacha_id: str, cantidad: int = 1,
+                           estado_herramienta: str = "Bueno",
                            fecha_regreso_estimada: str = "") -> tuple:
         """
         Solicita el préstamo de una herramienta
@@ -32,7 +33,12 @@ class PrestamoHerramientaController:
             if not herramienta_codigo:
                 return False, "Seleccione una herramienta", None
 
-            if herramienta_codigo not in store.herramientas:
+            # soportar préstamos desde herramientas o desde almacen
+            almacen = store.get_almacen()
+            herramienta_en_herr = herramienta_codigo in store.herramientas
+            herramienta_en_alm = herramienta_codigo in almacen
+
+            if not herramienta_en_herr and not herramienta_en_alm:
                 return False, "Herramienta no encontrada", None
 
             if not trabajador_solicita_id:
@@ -47,15 +53,24 @@ class PrestamoHerramientaController:
             if trabajador_despacha_id not in store.trabajadores:
                 return False, "Trabajador despachador no encontrado", None
 
-            herramienta = store.herramientas[herramienta_codigo]
-            if herramienta.cantidad <= 0:
-                return False, "No hay herramientas disponibles para prestar", None
+            # verificar disponibilidad según origen
+            disponible = 0
+            if herramienta_en_herr:
+                herramienta = store.herramientas[herramienta_codigo]
+                disponible = herramienta.cantidad
+            else:
+                item = almacen[herramienta_codigo]
+                disponible = item.cantidad
+
+            if disponible <= 0:
+                return False, "No hay unidades disponibles para prestar", None
 
             # Crear préstamo
             prestamo = store.solicitar_prestamo(
                 herramienta_codigo=herramienta_codigo,
                 trabajador_solicita_id=trabajador_solicita_id,
                 trabajador_despacha_id=trabajador_despacha_id,
+                cantidad=cantidad,
                 estado_herramienta=estado_herramienta,
                 fecha_regreso_estimada=fecha_regreso_estimada
             )
@@ -125,6 +140,23 @@ class PrestamoHerramientaController:
     def obtener_prestamos_por_trabajador(trabajador_id: str):
         """Obtiene todos los préstamos de un trabajador específico"""
         return [p for p in store.prestamos if p.trabajador_solicita_id == trabajador_id]
+
+    @staticmethod
+    def listar_prestamos_vencidos():
+        """Devuelve préstamos activos cuya fecha de regreso estimada ya pasó."""
+        from datetime import datetime
+        vencidos = []
+        for p in store.prestamos:
+            if p.es_activo() and p.fecha_regreso_estimada:
+                try:
+                    # formato esperado: YYYY-MM-DD HH:MM
+                    dt = datetime.strptime(p.fecha_regreso_estimada, "%Y-%m-%d %H:%M")
+                    if datetime.now() > dt:
+                        vencidos.append(p)
+                except Exception:
+                    # ignorar formatos inválidos
+                    continue
+        return vencidos
 
     @staticmethod
     def obtener_herramientas_disponibles():
