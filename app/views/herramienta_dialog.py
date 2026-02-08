@@ -1,59 +1,122 @@
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QSpinBox
+    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QSpinBox, QMessageBox
 )
 from PySide6.QtCore import Qt
 
+from app.core.store import store, Herramienta
+from app.core.bitacora import bitacora
+
 
 class HerramientaDialog(QDialog):
-    def __init__(self, parent=None, title="Nueva herramienta"):
+    def __init__(self, parent=None, herramienta=None):
         super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setModal(True)
-        self.resize(420, 260)
 
-        layout = QVBoxLayout(self)
-        layout.setSpacing(14)
+        # Herencia de QSS
+        self.setAttribute(Qt.WA_StyledBackground, True)
 
-        # Descripción
-        layout.addWidget(QLabel("Descripción"))
-        self.descripcion = QLineEdit()
-        layout.addWidget(self.descripcion)
+        self.herramienta = herramienta
+        if herramienta:
+            self.setWindowTitle("Editar Herramienta")
+        else:
+            self.setWindowTitle("Agregar Herramienta")
 
-        # Ubicación
-        layout.addWidget(QLabel("Ubicación"))
-        self.ubicacion = QLineEdit()
-        layout.addWidget(self.ubicacion)
+        self.setMinimumWidth(450)
 
-        # Cantidad
-        layout.addWidget(QLabel("Cantidad"))
-        self.cantidad = QSpinBox()
-        self.cantidad.setRange(1, 100000)
-        layout.addWidget(self.cantidad)
+        layout = QFormLayout(self)
+        layout.setSpacing(16)
 
-        # Botones
-        btns = QHBoxLayout()
-        btns.addStretch()
+        # ----- CAMPOS PRINCIPALES -----
+        self.txt_codigo = QLineEdit()
+        self.txt_codigo.setReadOnly(True)
+        self.txt_descripcion = QLineEdit()
+        self.txt_ubicacion = QLineEdit()
+        self.spin_cantidad = QSpinBox()
+        self.txt_obs = QLineEdit()
 
-        self.btn_ok = QPushButton("Guardar")
-        self.btn_cancel = QPushButton("Cancelar")
+        # Configurar spinbox
+        self.spin_cantidad.setRange(0, 999)
 
-        self.btn_ok.clicked.connect(self.accept)
-        self.btn_cancel.clicked.connect(self.reject)
+        # Placeholders
+        self.txt_codigo.setPlaceholderText("Código automático")
+        self.txt_descripcion.setPlaceholderText("Descripción de la herramienta")
+        self.txt_ubicacion.setPlaceholderText("Ej: Gaveta Herramientas")
+        self.txt_obs.setPlaceholderText("Observaciones")
 
-        btns.addWidget(self.btn_ok)
-        btns.addWidget(self.btn_cancel)
+        # Cargar datos si es edición
+        if herramienta:
+            self.txt_codigo.setText(herramienta.codigo)
+            self.txt_descripcion.setText(herramienta.descripcion)
+            self.txt_ubicacion.setText(herramienta.ubicacion)
+            self.spin_cantidad.setValue(herramienta.cantidad)
+            self.txt_obs.setText(getattr(herramienta, 'observaciones', ''))
+        else:
+            # Auto-generar código para nueva herramienta
+            codigo_auto = store.generar_codigo_herramienta()
+            self.txt_codigo.setText(codigo_auto)
 
-        layout.addLayout(btns)
+        layout.addRow("Código:", self.txt_codigo)
+        layout.addRow("Descripción:", self.txt_descripcion)
+        layout.addRow("Ubicación:", self.txt_ubicacion)
+        layout.addRow("Cantidad:", self.spin_cantidad)
+        layout.addRow("Observaciones:", self.txt_obs)
 
-    def get_data(self):
-        return (
-            self.descripcion.text().strip(),
-            self.ubicacion.text().strip(),
-            self.cantidad.value()
-        )
+        # ----- BOTONES -----
+        btn_layout = QHBoxLayout()
+        self.btn_guardar = QPushButton("Guardar")
+        self.btn_cancelar = QPushButton("Cancelar")
 
-    def set_data(self, descripcion, ubicacion, cantidad):
-        self.descripcion.setText(descripcion)
-        self.ubicacion.setText(ubicacion)
-        self.cantidad.setValue(cantidad)
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_guardar)
+        btn_layout.addWidget(self.btn_cancelar)
+
+        layout.addRow(btn_layout)
+
+        # ----- CONEXIONES -----
+        self.btn_guardar.clicked.connect(self.guardar)
+        self.btn_cancelar.clicked.connect(self.reject)
+
+    def guardar(self):
+        codigo = self.txt_codigo.text().strip()
+        descripcion = self.txt_descripcion.text().strip()
+        ubicacion = self.txt_ubicacion.text().strip()
+        cantidad = self.spin_cantidad.value()
+        obs = self.txt_obs.text().strip()
+
+        if not codigo or not descripcion or not ubicacion:
+            QMessageBox.warning(self, "Error", "Código, descripción y ubicación son obligatorios")
+            return
+
+        if self.herramienta:
+            # Edición: actualizar herramienta existente
+            self.herramienta.descripcion = descripcion
+            self.herramienta.ubicacion = ubicacion
+            self.herramienta.cantidad = cantidad
+            self.herramienta.observaciones = obs
+
+            store.update_herramienta(self.herramienta)
+            bitacora.log("Herramienta", f"Herramienta actualizada: {codigo}")
+            QMessageBox.information(self, "OK", "Herramienta actualizada")
+        else:
+            # Creación: nueva herramienta
+            herramientas = store.get_herramientas()
+            if codigo in herramientas:
+                QMessageBox.warning(self, "Error", f"El código {codigo} ya existe")
+                return
+
+            try:
+                h = Herramienta(
+                    codigo=codigo,
+                    descripcion=descripcion,
+                    ubicacion=ubicacion,
+                    cantidad=cantidad,
+                    observaciones=obs
+                )
+                store.add_herramienta(h)
+                bitacora.log("Herramienta", f"Nueva herramienta registrada: {codigo} - {descripcion}")
+                QMessageBox.information(self, "OK", "Herramienta registrada")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", str(e))
+                return
+
+        self.accept()
+

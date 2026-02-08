@@ -54,7 +54,7 @@ class ProductoDialog(QDialog):
         self.spin_stock_minimo.setRange(0, 999999)
 
         # Placeholders
-        self.txt_partida.setPlaceholderText("Ej: E-001")
+        self.txt_partida.setPlaceholderText("Se genera automáticamente")
         self.txt_descripcion.setPlaceholderText("Descripción del producto")
         self.txt_ubicacion.setPlaceholderText("Ej: Estante A, Gaveta 3")
         self.cmb_proveedor.setEditText("")
@@ -73,6 +73,11 @@ class ProductoDialog(QDialog):
                     self.cmb_proveedor.setCurrentText(producto.proveedor)
             except Exception:
                 self.cmb_proveedor.setEditText(producto.proveedor or "")
+        else:
+            # Auto-generar código para nuevo producto
+            codigo_auto = store.generar_codigo_partida()
+            self.txt_partida.setText(codigo_auto)
+            self.txt_partida.setReadOnly(True)
 
         layout.addRow("Partida:", self.txt_partida)
         layout.addRow("Descripción:", self.txt_descripcion)

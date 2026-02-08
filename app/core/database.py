@@ -37,7 +37,8 @@ def init_database():
             partida TEXT NOT NULL,
             descripcion TEXT,
             ubicacion TEXT,
-            cantidad INTEGER DEFAULT 0
+            cantidad INTEGER DEFAULT 0,
+            observaciones TEXT
         )
     """)
 
@@ -71,6 +72,51 @@ def init_database():
             fecha_devolucion TEXT,
             estado TEXT,
             comentarios TEXT
+        )
+    """)
+
+    # Tabla bitacora
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bitacora (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT NOT NULL,
+            tipo TEXT NOT NULL,
+            mensaje TEXT NOT NULL
+        )
+    """)
+
+    # Tabla entradas
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS entradas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo TEXT NOT NULL,
+            fecha TEXT NOT NULL,
+            partida TEXT NOT NULL,
+            descripcion TEXT,
+            cantidad INTEGER,
+            unidad TEXT,
+            proveedor TEXT,
+            recibio TEXT,
+            ubicacion TEXT,
+            observaciones TEXT
+        )
+    """)
+
+    # Tabla salidas
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS salidas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT NOT NULL,
+            partida TEXT NOT NULL,
+            descripcion TEXT,
+            cantidad INTEGER,
+            unidad TEXT,
+            trabajador_id TEXT,
+            trabajador_nombre TEXT,
+            proyecto TEXT,
+            destino TEXT,
+            entrego TEXT,
+            observaciones TEXT
         )
     """)
 

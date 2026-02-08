@@ -5,26 +5,28 @@ from app.core.store import Herramienta
 def fetch_all_herramientas():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT partida, descripcion, ubicacion, cantidad FROM herramientas")
+    cursor.execute("SELECT partida, descripcion, ubicacion, cantidad, observaciones FROM herramientas")
     rows = cursor.fetchall()
     conn.close()
     items = []
     for row in rows:
-        partida, descripcion, ubicacion, cantidad = row
+        partida, descripcion, ubicacion, cantidad, observaciones = row
         items.append(Herramienta(
             codigo=partida,
             descripcion=descripcion,
             ubicacion=ubicacion,
-            cantidad=cantidad
+            cantidad=cantidad,
+            observaciones=observaciones
         ))
     return items
 
 def insert_herramienta(item: Herramienta):
     conn = get_connection()
     cursor = conn.cursor()
+    obs = getattr(item, 'observaciones', '')
     cursor.execute(
-        "INSERT INTO herramientas (partida, descripcion, ubicacion, cantidad) VALUES (?, ?, ?, ?)",
-        (item.codigo, item.descripcion, item.ubicacion, item.cantidad)
+        "INSERT INTO herramientas (partida, descripcion, ubicacion, cantidad, observaciones) VALUES (?, ?, ?, ?, ?)",
+        (item.codigo, item.descripcion, item.ubicacion, item.cantidad, obs)
     )
     conn.commit()
     conn.close()
@@ -32,9 +34,10 @@ def insert_herramienta(item: Herramienta):
 def update_herramienta(item: Herramienta):
     conn = get_connection()
     cursor = conn.cursor()
+    obs = getattr(item, 'observaciones', '')
     cursor.execute(
-        "UPDATE herramientas SET descripcion=?, ubicacion=?, cantidad=? WHERE partida=?",
-        (item.descripcion, item.ubicacion, item.cantidad, item.codigo)
+        "UPDATE herramientas SET descripcion=?, ubicacion=?, cantidad=?, observaciones=? WHERE partida=?",
+        (item.descripcion, item.ubicacion, item.cantidad, obs, item.codigo)
     )
     conn.commit()
     conn.close()

@@ -2,12 +2,13 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QHBoxLayout,
     QComboBox, QSpinBox, QLineEdit,
     QPushButton, QMessageBox,
-    QTableWidget, QTableWidgetItem
+    QTableWidget, QTableWidgetItem, QDialog
 )
 from datetime import date
 
 from app.core.store import store, Entrada
 from app.core.bitacora import bitacora
+from app.views.entrada_dialog import EntradaDialog
 from app.views.producto_dialog import ProductoDialog
 class EntradasView(QWidget):
     def __init__(self):
@@ -15,42 +16,23 @@ class EntradasView(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # ========= FORMULARIO =========
-        form = QFormLayout()
-
-        self.cmb_partida = QComboBox()
-        self.cmb_partida.setEditable(True)
-        self.txt_descripcion = QLineEdit()
-
-        self.spin_cantidad = QSpinBox()
-        self.spin_cantidad.setRange(1, 100000)
-
-        self.txt_proveedor = QLineEdit()
-        self.txt_ubicacion = QLineEdit()
-        self.txt_recibio = QLineEdit()
-        self.txt_obs = QLineEdit()
-
-        form.addRow("Partida:", self.cmb_partida)
-        form.addRow("Descripción:", self.txt_descripcion)
-        form.addRow("Cantidad:", self.spin_cantidad)
-        form.addRow("Proveedor:", self.txt_proveedor)
-        form.addRow("Ubicación:", self.txt_ubicacion)
-        form.addRow("Recibió:", self.txt_recibio)
-        form.addRow("Observaciones:", self.txt_obs)
-
-        layout.addLayout(form)
-
-        # ========= BOTÓN =========
+        # ========= BOTONES =========
         btn_layout = QHBoxLayout()
-        self.btn_agregar = QPushButton(" Agregar entrada")
-        btn_layout.addStretch()
+        self.btn_agregar = QPushButton("+ Agregar Entrada")
+        self.btn_editar = QPushButton("✎ Editar Seleccionado")
+        self.btn_eliminar = QPushButton("✕ Eliminar Seleccionado")
+        
         btn_layout.addWidget(self.btn_agregar)
+        btn_layout.addWidget(self.btn_editar)
+        btn_layout.addWidget(self.btn_eliminar)
+        btn_layout.addStretch()
+
         layout.addLayout(btn_layout)
 
         # ========= TABLA =========
-        self.table = QTableWidget(0, 6)
+        self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels([
-            "Fecha", "Partida", "Descripción",
+            "Código", "Fecha", "Partida", "Descripción",
             "Cantidad", "Proveedor", "Ubicación"
         ])
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -58,94 +40,88 @@ class EntradasView(QWidget):
         layout.addWidget(self.table)
 
         # ========= CONEXIONES =========
-        self.cmb_partida.currentTextChanged.connect(self.update_descripcion)
-        self.btn_agregar.clicked.connect(self.registrar_entrada)
+        self.btn_agregar.clicked.connect(self.agregar)
+        self.btn_editar.clicked.connect(self.editar)
+        self.btn_eliminar.clicked.connect(self.eliminar)
 
-        self.load_partidas()
+        store.subscribe(self.load_entradas)
         self.load_entradas()
 
+    def selected_codigo(self):
+        """Obtiene el código de la entrada seleccionada"""
+        row = self.table.currentRow()
+        if row < 0:
+            return None
+        return self.table.item(row, 0).text()
     # ---------- CARGAS ----------
-    def load_partidas(self):
-        self.cmb_partida.clear()
-        almacen = store.get_almacen()
-        for partida in almacen.keys():
-            self.cmb_partida.addItem(partida)
-
-        if self.cmb_partida.count() > 0:
-            self.update_descripcion(self.cmb_partida.currentText())
-
-    def update_descripcion(self, partida):
-        almacen = store.get_almacen()
-        item = almacen.get(partida)
-        if item:
-            self.txt_descripcion.setText(item.descripcion)
-
     def load_entradas(self):
+        """Carga las entradas desde la BD"""
         self.table.setRowCount(0)
-        for e in store.entradas:
+        
+        # Recargar desde BD para obtener los datos más recientes
+        from app.core.entradas_db import fetch_all_entradas
+        entradas = fetch_all_entradas()
+        
+        for e in entradas:
             row = self.table.rowCount()
             self.table.insertRow(row)
 
-            self.table.setItem(row, 0, QTableWidgetItem(e.fecha))
-            self.table.setItem(row, 1, QTableWidgetItem(e.partida))
-            self.table.setItem(row, 2, QTableWidgetItem(e.descripcion))
-            self.table.setItem(row, 3, QTableWidgetItem(str(e.cantidad)))
-            self.table.setItem(row, 4, QTableWidgetItem(e.proveedor))
-            self.table.setItem(row, 5, QTableWidgetItem(e.ubicacion))
+            self.table.setItem(row, 0, QTableWidgetItem(e.codigo))
+            self.table.setItem(row, 1, QTableWidgetItem(e.fecha))
+            self.table.setItem(row, 2, QTableWidgetItem(e.partida))
+            self.table.setItem(row, 3, QTableWidgetItem(e.descripcion))
+            self.table.setItem(row, 4, QTableWidgetItem(str(e.cantidad)))
+            self.table.setItem(row, 5, QTableWidgetItem(e.proveedor))
+            self.table.setItem(row, 6, QTableWidgetItem(e.ubicacion))
 
-    # ---------- ACCIÓN ----------
-    def registrar_entrada(self):
-        partida = self.cmb_partida.currentText().strip()
-        if not partida:
-            QMessageBox.warning(self, "Error", "Ingrese o seleccione una partida")
-            return
-
-        try:
-            almacen = store.get_almacen()
-            # Si la partida no existe, ofrecer crear el producto completo
-            if partida not in almacen:
-                create = QMessageBox.question(
-                    self,
-                    "Partida no encontrada",
-                    f"La partida {partida} no existe. ¿Desea crear un nuevo producto?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-                if create == QMessageBox.Yes:
-                    dialog = ProductoDialog(self)
-                    dialog.txt_partida.setText(partida)
-                    dialog.txt_ubicacion.setText(self.txt_ubicacion.text())
-                    try:
-                        dialog.cmb_proveedor.setCurrentText(self.txt_proveedor.text())
-                    except Exception:
-                        dialog.cmb_proveedor.setEditText(self.txt_proveedor.text())
-                    dialog.spin_cantidad.setValue(self.spin_cantidad.value())
-                    if not dialog.exec():
-                        return
-                    # recargar almacen con el nuevo producto
-                    almacen = store.get_almacen()
-                else:
-                    return
-            entrada = Entrada(
-                fecha=str(date.today()),
-                partida=partida,
-                descripcion=self.txt_descripcion.text(),
-                cantidad=self.spin_cantidad.value(),
-                unidad=almacen[partida].unidad,
-                proveedor=self.txt_proveedor.text(),
-                recibio=self.txt_recibio.text(),
-                ubicacion=self.txt_ubicacion.text(),
-                observaciones=self.txt_obs.text(),
-            )
-
-            store.add_entrada(entrada)
+    # ---------- ACCIONES ----------
+    def agregar(self):
+        dialog = EntradaDialog(self)
+        if dialog.exec() == QDialog.Accepted:
             self.load_entradas()
-            bitacora.log("Entrada", f"{partida} +{self.spin_cantidad.value()} | Recibió: {self.txt_recibio.text()}")
 
-            QMessageBox.information(self, "Éxito", "Entrada agregada correctamente")
+    def editar(self):
+        codigo = self.selected_codigo()
+        if not codigo:
+            QMessageBox.warning(self, "Error", "Seleccione una entrada")
+            return
+        
+        from app.core.entradas_db import fetch_all_entradas
+        entradas = fetch_all_entradas()
+        entrada = None
+        for e in entradas:
+            if e.codigo == codigo:
+                entrada = e
+                break
+        
+        if not entrada:
+            QMessageBox.warning(self, "Error", "Entrada no encontrada")
+            return
+        
+        dialog = EntradaDialog(self, entrada)
+        if dialog.exec() == QDialog.Accepted:
+            self.load_entradas()
 
-            # reset mínimo
-            self.spin_cantidad.setValue(1)
-            self.txt_obs.clear()
+    def eliminar(self):
+        codigo = self.selected_codigo()
+        if not codigo:
+            QMessageBox.warning(self, "Error", "Seleccione una entrada")
+            return
+        
+        confirm = QMessageBox.question(
+            self,
+            "Confirmar eliminación",
+            f"¿Eliminar la entrada {codigo}?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if confirm == QMessageBox.Yes:
+            from app.core.entradas_db import fetch_all_entradas, delete_entrada
+            entradas = fetch_all_entradas()
+            for e in entradas:
+                if e.codigo == codigo:
+                    # Encontrar el ID basado en la posición
+                    delete_entrada(entradas.index(e) + 1)
+                    bitacora.log("Entrada", f"Entrada eliminada: {codigo}")
+                    self.load_entradas()
+                    return
 
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))

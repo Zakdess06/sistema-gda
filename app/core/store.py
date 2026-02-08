@@ -20,6 +20,7 @@ class AlmacenItem:
 
 @dataclass
 class Entrada:
+    codigo: str
     fecha: str
     partida: str
     descripcion: str
@@ -108,6 +109,52 @@ class Store:
             'T003': Trabajador(id='T003', nombre='Carlos Ruiz'),
         }
 
+    def generar_codigo_herramienta(self) -> str:
+        """Genera un código único para herramienta con formato H-XXX"""
+        herramientas = self.get_herramientas()
+        numeros = []
+        for codigo in herramientas.keys():
+            if codigo.startswith('H-'):
+                try:
+                    num = int(codigo.split('-')[1])
+                    numeros.append(num)
+                except (ValueError, IndexError):
+                    pass
+        
+        siguiente = max(numeros) + 1 if numeros else 1
+        return f"H-{siguiente:03d}"
+
+    def generar_codigo_partida(self) -> str:
+        """Genera un código único para partida/producto con formato P-XXX"""
+        almacen = self.get_almacen()
+        numeros = []
+        for codigo in almacen.keys():
+            if codigo.startswith('P-'):
+                try:
+                    num = int(codigo.split('-')[1])
+                    numeros.append(num)
+                except (ValueError, IndexError):
+                    pass
+        
+        siguiente = max(numeros) + 1 if numeros else 1
+        return f"P-{siguiente:03d}"
+
+    def generar_codigo_entrada(self) -> str:
+        """Genera un código único para entrada con formato E-XXX"""
+        entradas = self.entradas
+        numeros = []
+        for entrada in entradas:
+            codigo = getattr(entrada, 'codigo', '')
+            if codigo.startswith('E-'):
+                try:
+                    num = int(codigo.split('-')[1])
+                    numeros.append(num)
+                except (ValueError, IndexError):
+                    pass
+        
+        siguiente = max(numeros) + 1 if numeros else 1
+        return f"E-{siguiente:03d}"
+
     def add_producto(self, item):
         from app.core.almacen_db import insert_almacen_item
         insert_almacen_item(item)
@@ -125,8 +172,12 @@ class Store:
 
     def __init__(self):
         from app.core.almacen_db import fetch_all_almacen
-        self.entradas: List[Entrada] = []
-        self.salidas: List[Salida] = []
+        from app.core.entradas_db import fetch_all_entradas
+        from app.core.salidas_db import fetch_all_salidas
+        
+        # Cargar desde BD
+        self.entradas: List[Entrada] = fetch_all_entradas()
+        self.salidas: List[Salida] = fetch_all_salidas()
         self.herramientas: Dict[str, Herramienta] = {}
         self.trabajadores: Dict[str, Trabajador] = {}
         self.proveedores: Dict[str, Proveedor] = {}
@@ -169,21 +220,33 @@ class Store:
 
     def add_entrada(self, entrada: Entrada):
         from app.core.almacen_db import update_almacen_cantidad
+        from app.core.entradas_db import insert_entrada
+        
         almacen = self.get_almacen()
         if entrada.partida not in almacen:
             raise KeyError("Partida no registrada")
         item = almacen[entrada.partida]
         nueva_cantidad = item.cantidad + entrada.cantidad
         update_almacen_cantidad(entrada.partida, nueva_cantidad)
-        self.entradas.append(entrada)
+        
+        # Guardar en BD
+        insert_entrada(entrada)
+        
         bitacora.log(
             "Entrada",
             f"{entrada.partida} +{entrada.cantidad} {entrada.unidad} | Recibió: {entrada.recibio}"
         )
         self.notify()
 
+    def update_entrada(self, entrada: Entrada):
+        """Actualiza una entrada existente"""
+        from app.core.entradas_db import update_entrada as update_entrada_db
+        update_entrada_db(entrada)
+        self.notify()
+
     def add_salida(self, salida: Salida):
         from app.core.almacen_db import update_almacen_cantidad
+        from app.core.salidas_db import insert_salida
 
         almacen = self.get_almacen()
         if salida.partida not in almacen:
@@ -200,8 +263,8 @@ class Store:
         nueva_cantidad = item.cantidad - salida.cantidad
         update_almacen_cantidad(salida.partida, nueva_cantidad)
 
-        # reflejar en memoria de store (entradas/salidas list)
-        self.salidas.append(salida)
+        # Guardar en BD
+        insert_salida(salida)
 
         bitacora.log(
             "Salida",
@@ -210,32 +273,14 @@ class Store:
 
         self.notify()
 
-    # ---------- HERRAMIENTAS ----------
-    def add_herramienta(self, h: Herramienta):
-        if h.codigo in self.herramientas:
-            raise ValueError("La herramienta ya existe")
-
-        self.herramientas[h.codigo] = h
-
-        bitacora.log(
-            "Herramienta",
-            f"Alta de herramienta {h.codigo} - {h.descripcion}"
-        )
-
-        self.notify()
-
     # ---------- PRÉSTAMOS ----------
     def solicitar_prestamo(self, herramienta_codigo: str, trabajador_solicita_id: str, trabajador_despacha_id: str, cantidad: int = 1, estado_herramienta: str = "Bueno", fecha_regreso_estimada: str = ""):
-        """Crear un nuevo préstamo de herramienta"""
-        # soportar préstamos tanto desde `herramientas` como desde `almacen`
-        from app.core.almacen_db import update_almacen_cantidad
+        """Crear un nuevo préstamo de herramienta (solo desde herramientas registradas)"""
+        from app.core.herramienta_db import update_herramienta
+        
+        herramientas = self.get_herramientas()
 
-        almacen = self.get_almacen()
-
-        herramienta_en_herr = herramienta_codigo in self.herramientas
-        herramienta_en_alm = herramienta_codigo in almacen
-
-        if not herramienta_en_herr and not herramienta_en_alm:
+        if herramienta_codigo not in herramientas:
             raise KeyError("Herramienta no encontrada")
         
         if trabajador_solicita_id not in self.trabajadores:
@@ -244,14 +289,9 @@ class Store:
         if trabajador_despacha_id not in self.trabajadores:
             raise KeyError("Trabajador despachador no encontrado")
 
-        # validar disponibilidad
-        disponible = 0
-        if herramienta_en_herr:
-            herramienta = self.herramientas[herramienta_codigo]
-            disponible = herramienta.cantidad
-        else:
-            item = almacen[herramienta_codigo]
-            disponible = item.cantidad
+        # Validar disponibilidad
+        herramienta = herramientas[herramienta_codigo]
+        disponible = herramienta.cantidad
 
         if cantidad <= 0:
             raise ValueError("Cantidad inválida")
@@ -274,13 +314,11 @@ class Store:
             estado_herramienta_prestamo=estado_herramienta
         )
 
-        # actualizar stock según origen
-        if herramienta_en_herr:
-            herramienta.cantidad -= cantidad
-            herramienta.prestada = herramienta.cantidad <= 0
-        else:
-            nueva_cantidad = disponible - cantidad
-            update_almacen_cantidad(herramienta_codigo, nueva_cantidad)
+        # Actualizar cantidad en BD
+        herramienta.cantidad -= cantidad
+        herramienta.prestada = herramienta.cantidad <= 0
+        update_herramienta(herramienta)
+        
         self.prestamos.append(prestamo)
 
         bitacora.log(
@@ -293,6 +331,8 @@ class Store:
 
     def devolver_prestamo(self, prestamo_id: str, trabajador_recibe_id: str, estado_devolucion: str = "Bueno", comentarios: str = ""):
         """Registrar devolución de herramienta prestada"""
+        from app.core.herramienta_db import update_herramienta
+        
         prestamo = None
         for p in self.prestamos:
             if p.id == prestamo_id and p.fecha_devolucion == "":
@@ -311,10 +351,12 @@ class Store:
         prestamo.estado_herramienta_devolucion = estado_devolucion
         prestamo.comentarios = comentarios
 
-        herramienta = self.herramientas.get(prestamo.herramienta_codigo)
+        herramientas = self.get_herramientas()
+        herramienta = herramientas.get(prestamo.herramienta_codigo)
         if herramienta:
             herramienta.cantidad += 1
             herramienta.prestada = False
+            update_herramienta(herramienta)
 
         bitacora.log(
             "Devolución",

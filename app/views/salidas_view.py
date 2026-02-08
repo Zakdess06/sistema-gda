@@ -14,48 +14,38 @@ class SalidasView(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # ===== FORMULARIO =====
+        # ===== FORMULARIO SIMPLIFICADO =====
         form = QFormLayout()
 
-        # ----- DATOS DEL TRABAJADOR -----
+        # Trabajador
         self.cmb_id_trabajador = QComboBox()
-        self.txt_nombre_trabajador = QLineEdit()
-        self.txt_nombre_trabajador.setReadOnly(True)
-        self.txt_proyecto = QLineEdit()
-
         form.addRow("Trabajador:", self.cmb_id_trabajador)
-        form.addRow("Nombre:", self.txt_nombre_trabajador)
-        form.addRow("Proyecto:", self.txt_proyecto)
 
-        # ----- DATOS DEL MATERIAL -----
+        # Producto (solo productos existentes con stock)
         self.cmb_partida = QComboBox()
-        self.cmb_partida.setEditable(True)
-        self.txt_descripcion = QLineEdit()
-        self.txt_descripcion.setReadOnly(True)
+        self.cmb_partida.setEditable(False)
+        form.addRow("Producto:", self.cmb_partida)
 
-        # Mostrar unidad, ubicación y stock para facilitar ubicación en almacén
-        self.txt_unidad = QLineEdit()
-        self.txt_unidad.setReadOnly(True)
+        # Ubicación (se llena automáticamente)
         self.txt_ubicacion = QLineEdit()
         self.txt_ubicacion.setReadOnly(True)
-        self.txt_stock = QLineEdit()
-        self.txt_stock.setReadOnly(True)
+        form.addRow("Ubicación:", self.txt_ubicacion)
 
+        # Cantidad
         self.spin_cantidad = QSpinBox()
         self.spin_cantidad.setRange(1, 100000)
-
-        self.txt_destino = QLineEdit()
-        self.txt_entrego = QLineEdit()
-        self.txt_obs = QLineEdit()
-
-        form.addRow("Partida:", self.cmb_partida)
-        form.addRow("Descripción:", self.txt_descripcion)
-        form.addRow("Unidad:", self.txt_unidad)
-        form.addRow("Ubicación:", self.txt_ubicacion)
-        form.addRow("Disponible:", self.txt_stock)
         form.addRow("Cantidad:", self.spin_cantidad)
+
+        # Proyecto
+        self.txt_proyecto = QLineEdit()
+        form.addRow("Proyecto:", self.txt_proyecto)
+
+        # Destino
+        self.txt_destino = QLineEdit()
         form.addRow("Destino:", self.txt_destino)
-        form.addRow("Entregó:", self.txt_entrego)
+
+        # Observaciones (opcional)
+        self.txt_obs = QLineEdit()
         form.addRow("Observaciones:", self.txt_obs)
 
         layout.addLayout(form)
@@ -68,18 +58,17 @@ class SalidasView(QWidget):
         layout.addLayout(btn_layout)
 
         # ===== TABLA =====
-        self.table = QTableWidget(0, 8)
+        self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels([
-            "Fecha", "Trabajador", "Proyecto",
-            "Partida", "Descripción", "Cantidad",
-            "Destino", "Entregó"
+            "Fecha", "Trabajador", "Producto",
+            "Cantidad", "Proyecto", "Destino"
         ])
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         layout.addWidget(self.table)
 
         # ===== CONEXIONES =====
-        self.cmb_id_trabajador.currentTextChanged.connect(self.update_nombre_trabajador)
-        self.cmb_partida.currentTextChanged.connect(self.update_descripcion)
+        self.cmb_id_trabajador.currentTextChanged.connect(self.load_partidas)
+        self.cmb_partida.currentTextChanged.connect(self.update_cantidad_maxima)
         self.btn_salida.clicked.connect(self.registrar_salida)
 
         self.load_trabajadores()
@@ -92,173 +81,139 @@ class SalidasView(QWidget):
         for id_trab, trabajador in store.trabajadores.items():
             self.cmb_id_trabajador.addItem(f"{id_trab} - {trabajador.nombre}", id_trab)
 
-        if self.cmb_id_trabajador.count() > 0:
-            self.update_nombre_trabajador(self.cmb_id_trabajador.currentText())
-
-    def update_nombre_trabajador(self, texto):
-        id_trabajador = self.cmb_id_trabajador.currentData()
-        if id_trabajador and id_trabajador in store.trabajadores:
-            trabajador = store.trabajadores[id_trabajador]
-            self.txt_nombre_trabajador.setText(trabajador.nombre)
-        else:
-            self.txt_nombre_trabajador.clear()
-
     def load_partidas(self):
+        """Carga solo productos con stock disponible"""
         self.cmb_partida.clear()
         almacen = store.get_almacen()
-        for partida in almacen.keys():
-            self.cmb_partida.addItem(partida)
+        
+        # Solo mostrar productos con stock
+        for partida, item in almacen.items():
+            if item.cantidad > 0:
+                self.cmb_partida.addItem(f"{partida} - {item.descripcion}", partida)
 
         if self.cmb_partida.count() > 0:
-            self.update_descripcion(self.cmb_partida.currentText())
-
-    def update_descripcion(self, partida):
-        almacen = store.get_almacen()
-        item = almacen.get(partida)
-        if not item:
-            self.txt_descripcion.clear()
-            self.txt_unidad.clear()
-            self.txt_ubicacion.clear()
-            self.txt_stock.clear()
+            self.update_cantidad_maxima()
+        else:
             self.btn_salida.setEnabled(False)
+
+    def update_cantidad_maxima(self):
+        """Actualiza el máximo permitido según el stock disponible y llena la ubicación"""
+        codigo = self.cmb_partida.currentData()
+        if not codigo:
+            self.btn_salida.setEnabled(False)
+            self.txt_ubicacion.clear()
             return
 
-        self.txt_descripcion.setText(item.descripcion)
-        self.txt_unidad.setText(item.unidad)
-        self.txt_ubicacion.setText(item.ubicacion)
-        self.txt_stock.setText(str(item.cantidad))
+        almacen = store.get_almacen()
+        item = almacen.get(codigo)
+        if item and item.cantidad > 0:
+            self.spin_cantidad.setMaximum(item.cantidad)
+            self.spin_cantidad.setValue(1)
+            self.txt_ubicacion.setText(item.ubicacion)
+            self.btn_salida.setEnabled(True)
+        else:
+            self.btn_salida.setEnabled(False)
+            self.txt_ubicacion.clear()
 
-        # bloquear si no hay stock
-        self.btn_salida.setEnabled(item.cantidad > 0)
-
-        # ajustar máximo permitido
-        self.spin_cantidad.setMaximum(item.cantidad)
 
     def load_salidas(self):
+        """Carga las salidas desde la BD"""
         self.table.setRowCount(0)
-        for s in store.salidas:
+        
+        # Recargar desde BD para obtener los datos más recientes
+        from app.core.salidas_db import fetch_all_salidas
+        salidas = fetch_all_salidas()
+        
+        for s in salidas:
             row = self.table.rowCount()
             self.table.insertRow(row)
 
             self.table.setItem(row, 0, QTableWidgetItem(s.fecha))
             self.table.setItem(row, 1, QTableWidgetItem(f"{s.trabajador_id} - {s.trabajador_nombre}"))
-            self.table.setItem(row, 2, QTableWidgetItem(s.proyecto))
-            self.table.setItem(row, 3, QTableWidgetItem(s.partida))
-            self.table.setItem(row, 4, QTableWidgetItem(s.descripcion))
-            self.table.setItem(row, 5, QTableWidgetItem(str(s.cantidad)))
-            self.table.setItem(row, 6, QTableWidgetItem(s.destino))
-            self.table.setItem(row, 7, QTableWidgetItem(s.entrego))
+            self.table.setItem(row, 2, QTableWidgetItem(s.partida))
+            self.table.setItem(row, 3, QTableWidgetItem(str(s.cantidad)))
+            self.table.setItem(row, 4, QTableWidgetItem(s.proyecto))
+            self.table.setItem(row, 5, QTableWidgetItem(s.destino))
 
     # ---------- ACCIÓN ----------
     def registrar_salida(self):
-        # ===== VALIDACIONES DE TRABAJADOR =====
+        # Validar trabajador
         id_trabajador = self.cmb_id_trabajador.currentData()
-        nombre_trabajador = self.txt_nombre_trabajador.text().strip()
-        proyecto = self.txt_proyecto.text().strip()
-
         if not id_trabajador:
             QMessageBox.warning(self, "Error", "Seleccione un trabajador")
             return
 
-        if not proyecto:
-            QMessageBox.warning(self, "Error", "El nombre del proyecto es obligatorio")
+        # Obtener nombre del trabajador
+        trabajador = store.trabajadores.get(id_trabajador)
+        if not trabajador:
+            QMessageBox.warning(self, "Error", "Trabajador no encontrado")
             return
 
-        # ===== VALIDACIONES DE MATERIAL =====
-        partida = self.cmb_partida.currentText()
-        if not partida:
-            QMessageBox.warning(self, "Error", "Seleccione una partida")
+        # Validar producto
+        codigo_partida = self.cmb_partida.currentData()
+        if not codigo_partida:
+            QMessageBox.warning(self, "Error", "Seleccione un producto")
             return
 
-        if not self.txt_destino.text().strip():
-            QMessageBox.warning(self, "Error", "El destino es obligatorio")
-            return
-
-        if not self.txt_entrego.text().strip():
-            QMessageBox.warning(self, "Error", "El nombre de quien entrega es obligatorio")
-            return
-
-        almacen = store.get_almacen()
-        disponible = almacen[partida].cantidad
+        # Validar cantidad
         cantidad = self.spin_cantidad.value()
-
-        if cantidad > disponible:
-            QMessageBox.critical(
-                self,
-                "Stock insuficiente",
-                f"Disponible: {disponible}"
-            )
+        if cantidad <= 0:
+            QMessageBox.warning(self, "Error", "La cantidad debe ser mayor a 0")
             return
 
-        # ===== VALIDACIÓN: MÁXIMO 25 PRODUCTOS =====
-        # Contar cuántos productos hay en salidas no completadas (de este pedido)
-        # Por ahora se valida por salida individual
-        if cantidad > 25:
-            QMessageBox.critical(
-                self,
-                "Límite excedido",
-                f"No se pueden sacar más de 25 unidades por producto en una salida"
-            )
+        # Validar proyecto
+        proyecto = self.txt_proyecto.text().strip()
+        if not proyecto:
+            QMessageBox.warning(self, "Error", "El proyecto es obligatorio")
+            return
+
+        # Validar destino
+        destino = self.txt_destino.text().strip()
+        if not destino:
+            QMessageBox.warning(self, "Error", "El destino es obligatorio")
             return
 
         try:
             almacen = store.get_almacen()
-            item = almacen[partida]
+            item = almacen.get(codigo_partida)
+            if not item:
+                QMessageBox.warning(self, "Error", "Producto no encontrado")
+                return
 
-            # Preparar observaciones incluyendo ubicación (útil para picking)
-            ubicacion = item.ubicacion or self.txt_ubicacion.text()
-            obs_text = self.txt_obs.text().strip()
-            if ubicacion:
-                # anteponer la ubicación para que el personal la vea primero
-                obs_text = f"Ubicación: {ubicacion}. " + obs_text if obs_text else f"Ubicación: {ubicacion}."
-
-            # Mostrar confirmación final con datos relevantes
-            detalles = (
-                f"Partida: {partida}\n"
-                f"Descripción: {item.descripcion}\n"
-                f"Unidad: {item.unidad}\n"
-                f"Disponible: {item.cantidad}\n"
-                f"Cantidad a sacar: {cantidad}\n"
-                f"Ubicación: {ubicacion or 'N/A'}\n"
-                f"Destino: {self.txt_destino.text()}\n"
-                f"Entregó: {self.txt_entrego.text()}\n"
-            )
-
-            confirmar = QMessageBox.question(
-                self,
-                "Confirmar salida",
-                f"Confirma la siguiente salida?\n\n{detalles}",
-                QMessageBox.Yes | QMessageBox.No
-            )
-
-            if confirmar != QMessageBox.Yes:
+            # Validar disponibilidad
+            if cantidad > item.cantidad:
+                QMessageBox.critical(
+                    self,
+                    "Stock insuficiente",
+                    f"Disponible: {item.cantidad} unidades"
+                )
                 return
 
             salida = Salida(
                 fecha=datetime.now().strftime("%Y-%m-%d %H:%M"),
-                partida=partida,
+                partida=codigo_partida,
                 descripcion=item.descripcion,
                 cantidad=cantidad,
                 unidad=item.unidad,
                 trabajador_id=id_trabajador,
-                trabajador_nombre=nombre_trabajador,
+                trabajador_nombre=trabajador.nombre,
                 proyecto=proyecto,
-                destino=self.txt_destino.text(),
-                entrego=self.txt_entrego.text(),
-                observaciones=obs_text,
+                destino=destino,
+                entrego="",
+                observaciones=self.txt_obs.text().strip(),
             )
 
             store.add_salida(salida)
             self.load_salidas()
-            self.update_descripcion(partida)
 
             QMessageBox.information(self, "Éxito", "Salida registrada correctamente")
 
             # Limpiar formulario
             self.spin_cantidad.setValue(1)
             self.txt_destino.clear()
-            self.txt_entrego.clear()
+            self.txt_proyecto.clear()
             self.txt_obs.clear()
+            self.txt_ubicacion.clear()
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))

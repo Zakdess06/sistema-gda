@@ -23,7 +23,7 @@ class PrestamoHerramientaController:
                            estado_herramienta: str = "Bueno",
                            fecha_regreso_estimada: str = "") -> tuple:
         """
-        Solicita el préstamo de una herramienta
+        Solicita el préstamo de una herramienta registrada
         
         Returns:
             tuple: (success: bool, message: str, prestamo_id: str or None)
@@ -33,12 +33,9 @@ class PrestamoHerramientaController:
             if not herramienta_codigo:
                 return False, "Seleccione una herramienta", None
 
-            # soportar préstamos desde herramientas o desde almacen
-            almacen = store.get_almacen()
-            herramienta_en_herr = herramienta_codigo in store.herramientas
-            herramienta_en_alm = herramienta_codigo in almacen
-
-            if not herramienta_en_herr and not herramienta_en_alm:
+            # Solo soportar préstamos desde herramientas registradas
+            herramientas = store.get_herramientas()
+            if herramienta_codigo not in herramientas:
                 return False, "Herramienta no encontrada", None
 
             if not trabajador_solicita_id:
@@ -53,16 +50,9 @@ class PrestamoHerramientaController:
             if trabajador_despacha_id not in store.trabajadores:
                 return False, "Trabajador despachador no encontrado", None
 
-            # verificar disponibilidad según origen
-            disponible = 0
-            if herramienta_en_herr:
-                herramienta = store.herramientas[herramienta_codigo]
-                disponible = herramienta.cantidad
-            else:
-                item = almacen[herramienta_codigo]
-                disponible = item.cantidad
-
-            if disponible <= 0:
+            # Verificar disponibilidad
+            herramienta = herramientas[herramienta_codigo]
+            if herramienta.cantidad <= 0:
                 return False, "No hay unidades disponibles para prestar", None
 
             # Crear préstamo
@@ -161,4 +151,5 @@ class PrestamoHerramientaController:
     @staticmethod
     def obtener_herramientas_disponibles():
         """Obtiene las herramientas disponibles para prestar (cantidad > 0)"""
-        return [h for h in store.herramientas.values() if h.cantidad > 0]
+        herramientas = store.get_herramientas()
+        return [h for h in herramientas.values() if h.cantidad > 0]

@@ -1,12 +1,14 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
-    QPushButton, QMessageBox, QFrame, QComboBox, QApplication
+    QPushButton, QMessageBox, QFrame, QComboBox, QApplication, QDialog, QTableWidget, QTableWidgetItem, QHBoxLayout
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 
 from app.core.store import store
 from app.core.config import config
+from app.views.trabajador_dialog import TrabajadorDialog
+from app.views.proveedor_dialog import ProveedorDialog
 
 
 class ConfiguracionView(QWidget):
@@ -105,6 +107,16 @@ class ConfiguracionView(QWidget):
 
         btn_reset.clicked.connect(self.reset_demo)
 
+        btn_trabajadores = QPushButton("Gestionar Trabajadores")
+        btn_trabajadores.setStyleSheet("""
+            QPushButton {
+                padding: 10px;
+                font-size: 14px;
+            }
+        """)
+        btn_trabajadores.clicked.connect(self.abrir_gestor_trabajadores)
+
+        layout.addWidget(btn_trabajadores)
         layout.addWidget(btn_reset)
         layout.addStretch()
 
@@ -151,3 +163,106 @@ class ConfiguracionView(QWidget):
                     app.setStyleSheet(f.read())
             except Exception:
                 pass
+
+    def abrir_gestor_trabajadores(self):
+        """Abre ventana para gestionar trabajadores"""
+        dialog = QDialog(self)
+        dialog.setAttribute(Qt.WA_StyledBackground, True)
+        dialog.setWindowTitle("Gestionar Trabajadores")
+        dialog.setMinimumSize(600, 400)
+
+        layout = QVBoxLayout(dialog)
+
+        # Tabla de trabajadores
+        self.table = QTableWidget(0, 2)
+        self.table.setHorizontalHeaderLabels(["Nombre", "Identificación"])
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        layout.addWidget(self.table)
+
+        # Botones
+        btn_layout = QHBoxLayout()
+        btn_agregar = QPushButton("+ Agregar")
+        btn_editar = QPushButton("✎ Editar")
+        btn_eliminar = QPushButton("✕ Eliminar")
+        btn_cerrar = QPushButton("Cerrar")
+
+        btn_agregar.clicked.connect(lambda: self.agregar_trabajador(dialog))
+        btn_editar.clicked.connect(lambda: self.editar_trabajador(dialog))
+        btn_eliminar.clicked.connect(lambda: self.eliminar_trabajador(dialog))
+        btn_cerrar.clicked.connect(dialog.accept)
+
+        btn_layout.addWidget(btn_agregar)
+        btn_layout.addWidget(btn_editar)
+        btn_layout.addWidget(btn_eliminar)
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_cerrar)
+
+        layout.addLayout(btn_layout)
+
+        # Cargar trabajadores
+        self.cargar_trabajadores_tabla()
+
+        dialog.exec()
+
+    def cargar_trabajadores_tabla(self):
+        """Carga los trabajadores en la tabla"""
+        self.table.setRowCount(0)
+        for trab in store.trabajadores.values():
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            self.table.setItem(row, 0, QTableWidgetItem(trab.nombre))
+            self.table.setItem(row, 1, QTableWidgetItem(trab.numero_identificacion))
+
+    def agregar_trabajador(self, parent_dialog):
+        """Abre dialog para agregar trabajador"""
+        dialog = TrabajadorDialog(parent_dialog)
+        if dialog.exec() == QDialog.Accepted:
+            self.cargar_trabajadores_tabla()
+
+    def editar_trabajador(self, parent_dialog):
+        """Abre dialog para editar trabajador seleccionado"""
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(parent_dialog, "Error", "Seleccione un trabajador")
+            return
+
+        nombre = self.table.item(row, 0).text()
+        # Encontrar el trabajador en el store
+        trabajador = None
+        for trab in store.trabajadores.values():
+            if trab.nombre == nombre:
+                trabajador = trab
+                break
+
+        if not trabajador:
+            QMessageBox.warning(parent_dialog, "Error", "Trabajador no encontrado")
+            return
+
+        dialog = TrabajadorDialog(parent_dialog, trabajador)
+        if dialog.exec() == QDialog.Accepted:
+            self.cargar_trabajadores_tabla()
+
+    def eliminar_trabajador(self, parent_dialog):
+        """Elimina el trabajador seleccionado"""
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(parent_dialog, "Error", "Seleccione un trabajador")
+            return
+
+        nombre = self.table.item(row, 0).text()
+        confirm = QMessageBox.question(
+            parent_dialog,
+            "Confirmar eliminación",
+            f"¿Eliminar al trabajador {nombre}?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if confirm == QMessageBox.Yes:
+            # Encontrar y eliminar del store
+            for trab_id, trab in list(store.trabajadores.items()):
+                if trab.nombre == nombre:
+                    del store.trabajadores[trab_id]
+                    store.notify()
+                    self.cargar_trabajadores_tabla()
+                    return
+

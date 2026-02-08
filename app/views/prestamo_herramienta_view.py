@@ -139,6 +139,8 @@ class PrestamoHerramientaView(QWidget):
 
         # Conectar cambios en combobox
         self.combo_herramienta.currentIndexChanged.connect(self.actualizar_detalles_herramienta)
+        self.combo_trabajador_solicita.currentIndexChanged.connect(self.on_trabajador_solicita_changed)
+        self.combo_trabajador_despacha.currentIndexChanged.connect(self.on_trabajador_despacha_changed)
 
         return widget
 
@@ -261,6 +263,8 @@ class PrestamoHerramientaView(QWidget):
         """Recarga todos los datos en la vista"""
         self.actualizar_combos_herramientas()
         self.actualizar_combos_trabajadores()
+        # Aplicar filtros de exclusión mutua después de cargar trabajadores
+        self.actualizar_combo_solicita()
         self.cargar_prestamos_activos()
         self.actualizar_combos_prestamos()
         self.cargar_historial()
@@ -270,18 +274,10 @@ class PrestamoHerramientaView(QWidget):
         self.combo_herramienta.blockSignals(True)
         self.combo_herramienta.clear()
 
-        # Obtener desde almacen (partidas) sólo las con stock > 0
-        try:
-            almacen = store.get_almacen()
-            for item in almacen.values():
-                if item.cantidad > 0:
-                    # usar la partida como código identificador
-                    self.combo_herramienta.addItem(f"{item.partida} - {item.descripcion}", item.partida)
-        except Exception:
-            # fallback: usar herramientas
-            herramientas = self.controller.obtener_herramientas_disponibles()
-            for h in herramientas:
-                self.combo_herramienta.addItem(f"{h.codigo} - {h.descripcion}", h.codigo)
+        # Obtener solo herramientas registradas (no productos del almacén)
+        herramientas = self.controller.obtener_herramientas_disponibles()
+        for h in herramientas:
+            self.combo_herramienta.addItem(f"{h.codigo} - {h.descripcion}", h.codigo)
 
         self.combo_herramienta.blockSignals(False)
         self.actualizar_detalles_herramienta()
@@ -309,6 +305,70 @@ class PrestamoHerramientaView(QWidget):
             self.combo_trabajador_recibe.addItem(trab.nombre, trab.id)
         self.combo_trabajador_recibe.blockSignals(False)
 
+    def actualizar_combo_despacha(self):
+        """Actualiza el combo de despacha excluyendo al trabajador que solicita"""
+        id_solicita = self.combo_trabajador_solicita.currentData()
+        id_despacha_actual = self.combo_trabajador_despacha.currentData()
+        
+        self.combo_trabajador_despacha.blockSignals(True)
+        self.combo_trabajador_despacha.clear()
+        
+        for trab in store.trabajadores.values():
+            # No mostrar el trabajador que solicita
+            if trab.id != id_solicita:
+                self.combo_trabajador_despacha.addItem(trab.nombre, trab.id)
+        
+        # Seleccionar el primero disponible o mantener si es válido
+        if id_despacha_actual and id_despacha_actual != id_solicita:
+            for i in range(self.combo_trabajador_despacha.count()):
+                if self.combo_trabajador_despacha.itemData(i) == id_despacha_actual:
+                    self.combo_trabajador_despacha.setCurrentIndex(i)
+                    self.combo_trabajador_despacha.blockSignals(False)
+                    return
+        
+        # Si no se pudo mantener la selección, usar el primero
+        if self.combo_trabajador_despacha.count() > 0:
+            self.combo_trabajador_despacha.setCurrentIndex(0)
+        
+        self.combo_trabajador_despacha.blockSignals(False)
+        # Actualizar solicita en respuesta
+        self.actualizar_combo_solicita()
+
+    def actualizar_combo_solicita(self):
+        """Actualiza el combo de solicita excluyendo al trabajador que despacha"""
+        id_despacha = self.combo_trabajador_despacha.currentData()
+        id_solicita_actual = self.combo_trabajador_solicita.currentData()
+        
+        self.combo_trabajador_solicita.blockSignals(True)
+        self.combo_trabajador_solicita.clear()
+        
+        for trab in store.trabajadores.values():
+            # No mostrar el trabajador que despacha
+            if trab.id != id_despacha:
+                self.combo_trabajador_solicita.addItem(trab.nombre, trab.id)
+        
+        # Seleccionar el primero disponible o mantener si es válido
+        if id_solicita_actual and id_solicita_actual != id_despacha:
+            for i in range(self.combo_trabajador_solicita.count()):
+                if self.combo_trabajador_solicita.itemData(i) == id_solicita_actual:
+                    self.combo_trabajador_solicita.setCurrentIndex(i)
+                    self.combo_trabajador_solicita.blockSignals(False)
+                    return
+        
+        # Si no se pudo mantener la selección, usar el primero
+        if self.combo_trabajador_solicita.count() > 0:
+            self.combo_trabajador_solicita.setCurrentIndex(0)
+        
+        self.combo_trabajador_solicita.blockSignals(False)
+
+    def on_trabajador_solicita_changed(self):
+        """Se llama cuando cambia el trabajador que solicita"""
+        self.actualizar_combo_despacha()
+
+    def on_trabajador_despacha_changed(self):
+        """Se llama cuando cambia el trabajador que despacha"""
+        self.actualizar_combo_solicita()
+
     def actualizar_combos_prestamos(self):
         """Actualiza el combo de préstamos activos"""
         self.combo_prestamo_devolver.blockSignals(True)
@@ -330,9 +390,11 @@ class PrestamoHerramientaView(QWidget):
         if not codigo:
             self.lbl_ubicacion.setText("-")
             self.lbl_cantidad.setText("0")
+            self.btn_solicitar.setEnabled(False)
             return
 
-        herramienta = store.herramientas.get(codigo)
+        herramientas = store.get_herramientas()
+        herramienta = herramientas.get(codigo)
         if herramienta:
             self.lbl_ubicacion.setText(herramienta.ubicacion)
             self.lbl_cantidad.setText(str(herramienta.cantidad))
@@ -344,18 +406,9 @@ class PrestamoHerramientaView(QWidget):
             except Exception:
                 pass
         else:
-            # quizás viene de almacen
-            almacen = store.get_almacen()
-            item = almacen.get(codigo)
-            if item:
-                self.lbl_ubicacion.setText(item.ubicacion)
-                self.lbl_cantidad.setText(str(item.cantidad))
-                try:
-                    self.spin_cantidad_prestamo.setMaximum(int(item.cantidad))
-                    self.spin_cantidad_prestamo.setValue(min(self.spin_cantidad_prestamo.value(), item.cantidad))
-                    self.btn_solicitar.setEnabled(item.cantidad > 0)
-                except Exception:
-                    pass
+            self.lbl_ubicacion.setText("-")
+            self.lbl_cantidad.setText("0")
+            self.btn_solicitar.setEnabled(False)
 
     def actualizar_detalles_prestamo(self):
         """Actualiza los detalles del préstamo seleccionado"""

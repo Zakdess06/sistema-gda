@@ -1,11 +1,12 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLineEdit, QPushButton, QMessageBox, QSpinBox,
-    QTableWidget, QTableWidgetItem
+    QTableWidget, QTableWidgetItem, QDialog
 )
 
 from app.core.store import store, Herramienta
 from app.core.bitacora import bitacora
+from app.views.herramienta_dialog import HerramientaDialog
 
 
 class HerramientasView(QWidget):
@@ -14,35 +15,12 @@ class HerramientasView(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # ===== FORM =====
-        form = QFormLayout()
-
-        self.txt_codigo = QLineEdit()
-        self.txt_descripcion = QLineEdit()
-        self.txt_ubicacion = QLineEdit()
-        self.spin_cantidad = QSpinBox()
-        self.txt_obs = QLineEdit()
-
-        self.txt_codigo.setPlaceholderText("Ej: H-001")
-        self.txt_descripcion.setPlaceholderText("Descripción de la herramienta")
-        self.txt_ubicacion.setPlaceholderText("Ej: Gaveta Herramientas")
-        self.spin_cantidad.setRange(0, 999)
-        self.txt_obs.setPlaceholderText("Observaciones")
-
-        form.addRow("Código:", self.txt_codigo)
-        form.addRow("Descripción:", self.txt_descripcion)
-        form.addRow("Ubicación:", self.txt_ubicacion)
-        form.addRow("Cantidad:", self.spin_cantidad)
-        form.addRow("Observaciones:", self.txt_obs)
-
-        layout.addLayout(form)
-
         # ===== BOTONES =====
         btns = QHBoxLayout()
 
-        self.btn_add = QPushButton("Agregar Herramienta")
-        self.btn_edit = QPushButton("Editar Seleccionado")
-        self.btn_delete = QPushButton("Eliminar Seleccionado")
+        self.btn_add = QPushButton("+ Agregar Herramienta")
+        self.btn_edit = QPushButton("✎ Editar Seleccionado")
+        self.btn_delete = QPushButton("✕ Eliminar Seleccionado")
 
         btns.addWidget(self.btn_add)
         btns.addWidget(self.btn_edit)
@@ -68,6 +46,7 @@ class HerramientasView(QWidget):
         store.subscribe(self.load_data)
         self.load_data()
 
+
     # ---------- DATA ----------
     def load_data(self):
         self.table.setRowCount(0)
@@ -89,35 +68,9 @@ class HerramientasView(QWidget):
 
     # ---------- ACCIONES ----------
     def agregar(self):
-        codigo = self.txt_codigo.text().strip()
-        descripcion = self.txt_descripcion.text().strip()
-        ubicacion = self.txt_ubicacion.text().strip()
-        cantidad = self.spin_cantidad.value()
-
-        if not codigo or not descripcion or not ubicacion:
-            QMessageBox.warning(self, "Error", "Complete todos los campos obligatorios")
-            return
-
-        herramientas = store.get_herramientas()
-        if codigo in herramientas:
-            QMessageBox.warning(self, "Error", f"El código {codigo} ya existe")
-            return
-
-        try:
-            h = Herramienta(
-                codigo=codigo,
-                descripcion=descripcion,
-                ubicacion=ubicacion,
-                cantidad=cantidad,
-                observaciones=self.txt_obs.text().strip()
-            )
-            store.add_herramienta(h)
-            self.clear_form()
-            bitacora.log("Herramienta", f"Nueva herramienta registrada: {codigo} - {descripcion}")
-            QMessageBox.information(self, "OK", "Herramienta registrada")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+        dialog = HerramientaDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            self.load_data()
 
     def editar(self):
         codigo = self.selected_codigo()
@@ -129,13 +82,10 @@ class HerramientasView(QWidget):
         if not herramienta:
             QMessageBox.warning(self, "Error", "Herramienta no encontrada")
             return
-        # Cargar datos en formulario
-        self.txt_codigo.setText(herramienta.codigo)
-        self.txt_codigo.setReadOnly(True)
-        self.txt_descripcion.setText(herramienta.descripcion)
-        self.txt_ubicacion.setText(herramienta.ubicacion)
-        self.spin_cantidad.setValue(herramienta.cantidad)
-        self.txt_obs.setText(getattr(herramienta, 'observaciones', ''))
+        
+        dialog = HerramientaDialog(self, herramienta)
+        if dialog.exec() == QDialog.Accepted:
+            self.load_data()
 
     def eliminar(self):
         codigo = self.selected_codigo()
@@ -151,13 +101,6 @@ class HerramientasView(QWidget):
         if confirm == QMessageBox.Yes:
             store.delete_herramienta(codigo)
             bitacora.log("Herramienta", f"Herramienta eliminada: {codigo}")
-            self.clear_form()
+            self.load_data()
 
-    def clear_form(self):
-        self.txt_codigo.setText("")
-        self.txt_codigo.setReadOnly(False)
-        self.txt_descripcion.setText("")
-        self.txt_ubicacion.setText("")
-        self.spin_cantidad.setValue(0)
-        self.txt_obs.setText("")
 
