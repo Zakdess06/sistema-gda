@@ -15,7 +15,6 @@ class Sidebar(QWidget):
         buttons = {
             "Dashboard": "dashboard",
             "Almacén": "almacen",
-            "Entradas": "entradas",
             "Salidas": "salidas",
             "Herramientas": "herramientas",
             "Préstamos": "prestamos",

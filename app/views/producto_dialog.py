@@ -32,7 +32,7 @@ class ProductoDialog(QDialog):
         self.spin_stock_minimo = QSpinBox()
         self.txt_ubicacion = QLineEdit()
         self.cmb_proveedor = QComboBox()
-        self.cmb_proveedor.setEditable(True)
+        self.cmb_proveedor.setEditable(False)
 
         # cargar proveedores existentes
         try:
@@ -57,7 +57,6 @@ class ProductoDialog(QDialog):
         self.txt_partida.setPlaceholderText("Se genera automáticamente")
         self.txt_descripcion.setPlaceholderText("Descripción del producto")
         self.txt_ubicacion.setPlaceholderText("Ej: Estante A, Gaveta 3")
-        self.cmb_proveedor.setEditText("")
 
         # Cargar datos si es edición
         if producto:
@@ -68,11 +67,10 @@ class ProductoDialog(QDialog):
             self.spin_cantidad.setValue(producto.cantidad)
             self.txt_ubicacion.setText(producto.ubicacion)
             # intentar seleccionar proveedor en combo
-            try:
-                if producto.proveedor:
-                    self.cmb_proveedor.setCurrentText(producto.proveedor)
-            except Exception:
-                self.cmb_proveedor.setEditText(producto.proveedor or "")
+            if producto.proveedor:
+                index = self.cmb_proveedor.findText(producto.proveedor)
+                if index >= 0:
+                    self.cmb_proveedor.setCurrentIndex(index)
         else:
             # Auto-generar código para nuevo producto
             codigo_auto = store.generar_codigo_partida()
@@ -157,6 +155,7 @@ class ProductoDialog(QDialog):
                 proveedor=proveedor,
                 stock_minimo=stock_minimo
             )
+            self.producto = nuevo  # Asignar al atributo para poder acceder después
             store.add_producto(nuevo)
 
         self.accept()

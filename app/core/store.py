@@ -125,19 +125,27 @@ class Store:
         return f"H-{siguiente:03d}"
 
     def generar_codigo_partida(self) -> str:
-        """Genera un código único para partida/producto con formato P-XXX"""
+        """Genera un código único para partida con formato AAAAMMDD-PROD-XXX"""
+        from datetime import datetime
+        
+        # Obtener fecha actual en formato AAAAMMDD
+        fecha_hoy = datetime.now().strftime("%Y%m%d")
+        
         almacen = self.get_almacen()
         numeros = []
+        
+        # Buscar todas las partidas con la fecha actual
+        prefijo = f"{fecha_hoy}-PROD-"
         for codigo in almacen.keys():
-            if codigo.startswith('P-'):
+            if codigo.startswith(prefijo):
                 try:
-                    num = int(codigo.split('-')[1])
+                    num = int(codigo.split('-')[-1])  # Obtener el número al final
                     numeros.append(num)
                 except (ValueError, IndexError):
                     pass
         
         siguiente = max(numeros) + 1 if numeros else 1
-        return f"P-{siguiente:03d}"
+        return f"{fecha_hoy}-PROD-{siguiente:03d}"
 
     def generar_codigo_entrada(self) -> str:
         """Genera un código único para entrada con formato E-XXX"""
@@ -174,13 +182,27 @@ class Store:
         from app.core.almacen_db import fetch_all_almacen
         from app.core.entradas_db import fetch_all_entradas
         from app.core.salidas_db import fetch_all_salidas
+        from app.core.proveedor_db import fetch_all_proveedores
         
         # Cargar desde BD
         self.entradas: List[Entrada] = fetch_all_entradas()
         self.salidas: List[Salida] = fetch_all_salidas()
         self.herramientas: Dict[str, Herramienta] = {}
         self.trabajadores: Dict[str, Trabajador] = {}
+        
+        # Cargar proveedores desde BD
+        proveedores_lista = fetch_all_proveedores()
         self.proveedores: Dict[str, Proveedor] = {}
+        for prov_dict in proveedores_lista:
+            prov = Proveedor(
+                id=str(prov_dict['id']),
+                nombre_comercial=prov_dict['nombre_comercial'],
+                nombre_fiscal=prov_dict['nombre_fiscal'],
+                ubicacion=prov_dict['ubicacion'],
+                telefono=prov_dict['telefono']
+            )
+            self.proveedores[str(prov_dict['id'])] = prov
+        
         self.prestamos: List[Prestamo] = []
         self._subscribers: List[Callable] = []
         self._almacen_cache = None  # Solo para compatibilidad, pero siempre se consulta la base
@@ -214,6 +236,27 @@ class Store:
         from app.core.herramienta_db import delete_herramienta
         delete_herramienta(codigo)
         self.notify()
+
+    # ---------- PROVEEDORES (BASE DE DATOS) ----------
+    def add_proveedor(self, proveedor: Proveedor):
+        from app.core.proveedor_db import insert_proveedor
+        pid = insert_proveedor(proveedor.nombre_comercial, proveedor.nombre_fiscal, proveedor.ubicacion, proveedor.telefono)
+        proveedor.id = str(pid)
+        self.proveedores[str(pid)] = proveedor
+        self.notify()
+
+    def update_proveedor(self, proveedor: Proveedor):
+        from app.core.proveedor_db import update_proveedor
+        update_proveedor(int(proveedor.id), proveedor.nombre_comercial, proveedor.nombre_fiscal, proveedor.ubicacion, proveedor.telefono)
+        self.notify()
+
+    def delete_proveedor(self, proveedor_id: str):
+        from app.core.proveedor_db import delete_proveedor
+        delete_proveedor(int(proveedor_id))
+        if proveedor_id in self.proveedores:
+            del self.proveedores[proveedor_id]
+        self.notify()
+
     def get_almacen(self):
         from app.core.almacen_db import fetch_all_almacen
         return {item.partida: item for item in fetch_all_almacen()}

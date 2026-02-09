@@ -375,8 +375,7 @@ class ConfiguracionView(QWidget):
             # Encontrar y eliminar del store
             for prov_id, prov in list(store.proveedores.items()):
                 if prov.nombre_comercial == nombre_comercial:
-                    del store.proveedores[prov_id]
-                    store.notify()
+                    store.delete_proveedor(prov_id)
                     self.cargar_proveedores_tabla()
                     return
 

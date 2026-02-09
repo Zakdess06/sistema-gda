@@ -80,33 +80,21 @@ class ProveedorDialog(QDialog):
             self.proveedor.nombre_fiscal = nombre_fiscal
             self.proveedor.ubicacion = ubicacion
             self.proveedor.telefono = telefono
+            store.update_proveedor(self.proveedor)
             bitacora.log("Proveedor", f"Proveedor actualizado: {nombre_comercial}")
             QMessageBox.information(self, "OK", "Proveedor actualizado")
         else:
             # Creación: nuevo proveedor
             try:
-                # Generar un ID único
-                max_id = 0
-                for prov_id in store.proveedores.keys():
-                    if prov_id.startswith('PR'):
-                        try:
-                            num = int(prov_id[2:])
-                            max_id = max(max_id, num)
-                        except (ValueError, IndexError):
-                            pass
-                
-                nuevo_id = f"PR{max_id + 1:03d}"
-                
                 p = Proveedor(
-                    id=nuevo_id,
+                    id="",  # Se asignará después del insert
                     nombre_comercial=nombre_comercial,
                     nombre_fiscal=nombre_fiscal,
                     ubicacion=ubicacion,
                     telefono=telefono
                 )
-                store.proveedores[nuevo_id] = p
+                store.add_proveedor(p)
                 bitacora.log("Proveedor", f"Nuevo proveedor registrado: {nombre_comercial}")
-                store.notify()
                 QMessageBox.information(self, "OK", "Proveedor registrado")
             except Exception as e:
                 QMessageBox.critical(self, "Error", str(e))

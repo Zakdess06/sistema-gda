@@ -85,23 +85,6 @@ def init_database():
         )
     """)
 
-    # Tabla entradas
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS entradas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigo TEXT NOT NULL,
-            fecha TEXT NOT NULL,
-            partida TEXT NOT NULL,
-            descripcion TEXT,
-            cantidad INTEGER,
-            unidad TEXT,
-            proveedor TEXT,
-            recibio TEXT,
-            ubicacion TEXT,
-            observaciones TEXT
-        )
-    """)
-
     # Tabla salidas
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS salidas (

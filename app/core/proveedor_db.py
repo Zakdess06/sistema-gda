@@ -62,3 +62,37 @@ def get_or_create_proveedor(nombre_comercial: str, ubicacion: str = '', telefono
     pid = cursor.lastrowid
     conn.close()
     return pid
+
+def insert_proveedor(nombre_comercial: str, nombre_fiscal: str, ubicacion: str = '', telefono: str = '') -> int:
+    """Inserta un nuevo proveedor en la base de datos"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO proveedores (nombre_comercial, nombre_fiscal, ubicacion, telefono) VALUES (?, ?, ?, ?)",
+        (nombre_comercial, nombre_fiscal, ubicacion, telefono)
+    )
+    conn.commit()
+    pid = cursor.lastrowid
+    conn.close()
+    return pid
+
+
+def update_proveedor(pid: int, nombre_comercial: str, nombre_fiscal: str, ubicacion: str = '', telefono: str = ''):
+    """Actualiza un proveedor existente"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE proveedores SET nombre_comercial=?, nombre_fiscal=?, ubicacion=?, telefono=? WHERE id=?",
+        (nombre_comercial, nombre_fiscal, ubicacion, telefono, pid)
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_proveedor(pid: int):
+    """Elimina un proveedor de la base de datos"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM proveedores WHERE id=?", (pid,))
+    conn.commit()
+    conn.close()

@@ -22,7 +22,7 @@ class AlmacenView(QWidget):
         # ===== BOTONES =====
         btn_layout = QHBoxLayout()
 
-        self.btn_add = QPushButton("Agregar Producto")
+        self.btn_add = QPushButton("+ Agregar Producto")
         self.btn_restock = QPushButton("Hacer Restock")
         self.btn_edit = QPushButton("Editar Seleccionado")
         self.btn_delete = QPushButton("Eliminar Seleccionado")
@@ -96,9 +96,12 @@ class AlmacenView(QWidget):
     def add_product(self):
         dialog = ProductoDialog(self)
         if dialog.exec():
+            # Generar partida con formato AAAAMMDD-PROD-XXX
+            partida = store.generar_codigo_partida()
+            dialog.producto.partida = partida
             # Guardar en base de datos
             store.add_producto(dialog.producto)
-            bitacora.log("Almacén", f"Nuevo producto agregado: {dialog.txt_partida.text()}")
+            bitacora.log("Almacén", f"Nuevo producto agregado: {partida}")
 
     def restock_selected(self):
         selected = self.table.currentRow()
@@ -129,6 +132,7 @@ class AlmacenView(QWidget):
             return
         dialog = ProductoDialog(self, producto)
         if dialog.exec():
+            producto.partida = partida  # Asegurar que la partida no cambie
             store.update_producto(producto)
             bitacora.log("Almacén", f"Producto editado: {partida}")
 

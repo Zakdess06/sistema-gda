@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
 from app.views.sidebar import Sidebar
 from app.views.dashboard_view import DashboardView
 from app.views.almacen_view import AlmacenView
-from app.views.entradas_view import EntradasView
 from app.views.salidas_view import SalidasView
 from app.views.herramienta_view import HerramientasView
 from app.views.prestamo_herramienta_view import PrestamoHerramientaView
@@ -40,7 +39,6 @@ class MainWindow(QMainWindow):
         self.views = {
             "dashboard": DashboardView(),
             "almacen": AlmacenView(),
-            "entradas": EntradasView(),
             "salidas": SalidasView(),
             "herramientas": HerramientasView(),
             "prestamos": PrestamoHerramientaView(),

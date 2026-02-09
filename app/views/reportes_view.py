@@ -90,6 +90,9 @@ class ReportesView(QWidget):
                 "Partida", "Descripción", "Cantidad",
                 "Destino", "Entregó"
             ]
+            # Recargar desde BD para obtener los datos más recientes
+            from app.core.salidas_db import fetch_all_salidas
+            salidas = fetch_all_salidas()
             rows = [
                 (
                     s.fecha,
@@ -101,7 +104,7 @@ class ReportesView(QWidget):
                     s.destino,
                     s.entrego
                 )
-                for s in store.salidas
+                for s in salidas
             ]
 
         elif tipo == "Stock Mínimo":

@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QWidget, QStackedLayout, QLabel
 
 from app.views.almacen_view import AlmacenView
-from app.views.entradas_view import EntradasView
 from app.views.herramienta_view import HerramientaView
 
 
@@ -17,7 +16,6 @@ class ContentArea(QWidget):
 
         # Vistas principales
         self.almacen = AlmacenView()
-        self.entradas = EntradasView()
         self.herramientas = HerramientaView()
 
         self.salidas = QLabel("Salidas")
@@ -26,7 +24,6 @@ class ContentArea(QWidget):
         # Agregar vistas al stack
         self.layout.addWidget(self.dashboard)
         self.layout.addWidget(self.almacen)
-        self.layout.addWidget(self.entradas)
         self.layout.addWidget(self.herramientas)
         self.layout.addWidget(self.salidas)
 
@@ -38,9 +35,6 @@ class ContentArea(QWidget):
 
     def show_almacen(self):
         self.layout.setCurrentWidget(self.almacen)
-
-    def show_entradas(self):
-        self.layout.setCurrentWidget(self.entradas)
 
     def show_herramientas(self):
         self.layout.setCurrentWidget(self.herramientas)

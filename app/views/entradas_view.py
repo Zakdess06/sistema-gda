@@ -1,15 +1,12 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QFormLayout, QHBoxLayout,
-    QComboBox, QSpinBox, QLineEdit,
+    QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QMessageBox,
     QTableWidget, QTableWidgetItem, QDialog
 )
-from datetime import date
 
 from app.core.store import store, Entrada
 from app.core.bitacora import bitacora
 from app.views.entrada_dialog import EntradaDialog
-from app.views.producto_dialog import ProductoDialog
 class EntradasView(QWidget):
     def __init__(self):
         super().__init__()
@@ -18,7 +15,7 @@ class EntradasView(QWidget):
 
         # ========= BOTONES =========
         btn_layout = QHBoxLayout()
-        self.btn_agregar = QPushButton("+ Agregar Entrada")
+        self.btn_agregar = QPushButton("+ Agregar Producto")
         self.btn_editar = QPushButton("✎ Editar Seleccionado")
         self.btn_eliminar = QPushButton("✕ Eliminar Seleccionado")
         
@@ -30,10 +27,10 @@ class EntradasView(QWidget):
         layout.addLayout(btn_layout)
 
         # ========= TABLA =========
-        self.table = QTableWidget(0, 7)
+        self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels([
-            "Código", "Fecha", "Partida", "Descripción",
-            "Cantidad", "Proveedor", "Ubicación"
+            "Partida", "Descripción", "Cantidad", "Unidad",
+            "Proveedor", "Ubicación"
         ])
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
@@ -47,15 +44,16 @@ class EntradasView(QWidget):
         store.subscribe(self.load_entradas)
         self.load_entradas()
 
-    def selected_codigo(self):
-        """Obtiene el código de la entrada seleccionada"""
+    def selected_partida(self):
+        """Obtiene la partida de la entrada seleccionada"""
         row = self.table.currentRow()
         if row < 0:
             return None
         return self.table.item(row, 0).text()
+
     # ---------- CARGAS ----------
     def load_entradas(self):
-        """Carga las entradas desde la BD"""
+        """Carga las entradas (productos) desde la BD"""
         self.table.setRowCount(0)
         
         # Recargar desde BD para obtener los datos más recientes
@@ -66,13 +64,12 @@ class EntradasView(QWidget):
             row = self.table.rowCount()
             self.table.insertRow(row)
 
-            self.table.setItem(row, 0, QTableWidgetItem(e.codigo))
-            self.table.setItem(row, 1, QTableWidgetItem(e.fecha))
-            self.table.setItem(row, 2, QTableWidgetItem(e.partida))
-            self.table.setItem(row, 3, QTableWidgetItem(e.descripcion))
-            self.table.setItem(row, 4, QTableWidgetItem(str(e.cantidad)))
-            self.table.setItem(row, 5, QTableWidgetItem(e.proveedor))
-            self.table.setItem(row, 6, QTableWidgetItem(e.ubicacion))
+            self.table.setItem(row, 0, QTableWidgetItem(e.partida))
+            self.table.setItem(row, 1, QTableWidgetItem(e.descripcion))
+            self.table.setItem(row, 2, QTableWidgetItem(str(e.cantidad)))
+            self.table.setItem(row, 3, QTableWidgetItem(e.unidad))
+            self.table.setItem(row, 4, QTableWidgetItem(e.proveedor))
+            self.table.setItem(row, 5, QTableWidgetItem(e.ubicacion))
 
     # ---------- ACCIONES ----------
     def agregar(self):
@@ -81,8 +78,8 @@ class EntradasView(QWidget):
             self.load_entradas()
 
     def editar(self):
-        codigo = self.selected_codigo()
-        if not codigo:
+        partida = self.selected_partida()
+        if not partida:
             QMessageBox.warning(self, "Error", "Seleccione una entrada")
             return
         
@@ -90,7 +87,7 @@ class EntradasView(QWidget):
         entradas = fetch_all_entradas()
         entrada = None
         for e in entradas:
-            if e.codigo == codigo:
+            if e.partida == partida:
                 entrada = e
                 break
         
@@ -103,25 +100,20 @@ class EntradasView(QWidget):
             self.load_entradas()
 
     def eliminar(self):
-        codigo = self.selected_codigo()
-        if not codigo:
+        partida = self.selected_partida()
+        if not partida:
             QMessageBox.warning(self, "Error", "Seleccione una entrada")
             return
         
         confirm = QMessageBox.question(
             self,
             "Confirmar eliminación",
-            f"¿Eliminar la entrada {codigo}?",
+            f"¿Eliminar el producto {partida}?",
             QMessageBox.Yes | QMessageBox.No
         )
         if confirm == QMessageBox.Yes:
-            from app.core.entradas_db import fetch_all_entradas, delete_entrada
-            entradas = fetch_all_entradas()
-            for e in entradas:
-                if e.codigo == codigo:
-                    # Encontrar el ID basado en la posición
-                    delete_entrada(entradas.index(e) + 1)
-                    bitacora.log("Entrada", f"Entrada eliminada: {codigo}")
-                    self.load_entradas()
-                    return
+            from app.core.entradas_db import delete_entrada
+            delete_entrada(partida)
+            bitacora.log("Almacén", f"Producto eliminado: {partida}")
+            self.load_entradas()
 
