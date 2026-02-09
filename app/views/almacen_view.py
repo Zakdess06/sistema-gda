@@ -96,12 +96,11 @@ class AlmacenView(QWidget):
     def add_product(self):
         dialog = ProductoDialog(self)
         if dialog.exec():
-            # Generar partida con formato AAAAMMDD-PROD-XXX
-            partida = store.generar_codigo_partida()
-            dialog.producto.partida = partida
-            # Guardar en base de datos
-            store.add_producto(dialog.producto)
-            bitacora.log("Almacén", f"Nuevo producto agregado: {partida}")
+            # ProductoDialog ya guardó el producto en la BD
+            # Solo refrescar la vista y log
+            self.load_data()
+            if dialog.producto:
+                bitacora.log("Almacén", f"Nuevo producto agregado: {dialog.producto.partida}")
 
     def restock_selected(self):
         selected = self.table.currentRow()

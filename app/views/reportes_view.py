@@ -28,7 +28,8 @@ class ReportesView(QWidget):
             "Almacén",
             "Entradas",
             "Salidas",
-            "Stock Mínimo"
+            "Stock Mínimo",
+            "Productos Más Solicitados"
         ])
         self.cmb_tipo.currentTextChanged.connect(self.load_preview)
         layout.addWidget(self.cmb_tipo)
@@ -123,6 +124,38 @@ class ReportesView(QWidget):
                 if i.cantidad <= i.stock_minimo
             ]
 
+        elif tipo == "Productos Más Solicitados":
+            headers = ["Partida", "Descripción", "Unidad", "Total Salidas", "Ubicación", "Proveedor"]
+            # Recargar desde BD para obtener los datos más recientes
+            from app.core.salidas_db import fetch_all_salidas
+            salidas = fetch_all_salidas()
+            
+            # Agrupar salidas por partida
+            salidas_por_partida = {}
+            for s in salidas:
+                if s.partida not in salidas_por_partida:
+                    salidas_por_partida[s.partida] = {
+                        'cantidad_total': 0,
+                        'veces_solicitado': 0
+                    }
+                salidas_por_partida[s.partida]['cantidad_total'] += s.cantidad
+                salidas_por_partida[s.partida]['veces_solicitado'] += 1
+            
+            # Crear filas ordenadas por cantidad total (descendente)
+            almacen = store.get_almacen()
+            rows = []
+            for partida, datos in sorted(salidas_por_partida.items(), key=lambda x: x[1]['cantidad_total'], reverse=True):
+                item = almacen.get(partida)
+                if item:
+                    rows.append((
+                        partida,
+                        item.descripcion,
+                        item.unidad,
+                        datos['cantidad_total'],
+                        item.ubicacion,
+                        item.proveedor
+                    ))
+
         self.populate_table(headers, rows)
 
     def populate_table(self, headers, rows):
@@ -162,6 +195,8 @@ class ReportesView(QWidget):
                 self.export_salidas(path)
             elif tipo == "Stock Mínimo":
                 self.export_stock_minimo(path)
+            elif tipo == "Productos Más Solicitados":
+                self.export_productos_mas_solicitados(path)
             
             QMessageBox.information(self, "Listo", "Reporte exportado correctamente")
 
@@ -247,4 +282,37 @@ class ReportesView(QWidget):
             for i in store.get_almacen().values()
             if i.cantidad <= i.stock_minimo
         ]
+        export_to_excel(headers, rows, path)
+
+    def export_productos_mas_solicitados(self, path):
+        headers = ["Partida", "Descripción", "Unidad", "Total Salidas", "Ubicación", "Proveedor"]
+        from app.core.salidas_db import fetch_all_salidas
+        salidas = fetch_all_salidas()
+        
+        # Agrupar salidas por partida
+        salidas_por_partida = {}
+        for s in salidas:
+            if s.partida not in salidas_por_partida:
+                salidas_por_partida[s.partida] = {
+                    'cantidad_total': 0,
+                    'veces_solicitado': 0
+                }
+            salidas_por_partida[s.partida]['cantidad_total'] += s.cantidad
+            salidas_por_partida[s.partida]['veces_solicitado'] += 1
+        
+        # Crear filas ordenadas por cantidad total (descendente)
+        almacen = store.get_almacen()
+        rows = []
+        for partida, datos in sorted(salidas_por_partida.items(), key=lambda x: x[1]['cantidad_total'], reverse=True):
+            item = almacen.get(partida)
+            if item:
+                rows.append((
+                    partida,
+                    item.descripcion,
+                    item.unidad,
+                    datos['cantidad_total'],
+                    item.ubicacion,
+                    item.proveedor
+                ))
+        
         export_to_excel(headers, rows, path)

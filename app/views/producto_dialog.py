@@ -65,6 +65,7 @@ class ProductoDialog(QDialog):
             self.txt_descripcion.setText(producto.descripcion)
             self.cmb_unidad.setCurrentText(producto.unidad)
             self.spin_cantidad.setValue(producto.cantidad)
+            self.spin_stock_minimo.setValue(producto.stock_minimo)
             self.txt_ubicacion.setText(producto.ubicacion)
             # intentar seleccionar proveedor en combo
             if producto.proveedor:
