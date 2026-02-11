@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QSpinBox, QComboBox, QMessageBox, QVBoxLayout
+    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QSpinBox, 
+    QComboBox, QMessageBox, QVBoxLayout, QLabel
 )
 from PySide6.QtCore import Qt
 from datetime import date
@@ -19,21 +20,33 @@ class EntradaDialog(QDialog):
         if entrada:
             self.setWindowTitle("Editar Entrada")
         else:
-            self.setWindowTitle("Registrar Entrada")
+            self.setWindowTitle("Nueva Entrada")
 
         self.setMinimumWidth(550)
+        self.setMinimumHeight(550)
 
+        # ===== LAYOUT PRINCIPAL =====
         main_layout = QVBoxLayout(self)
-        layout = QFormLayout()
-        layout.setSpacing(16)
-        main_layout.addLayout(layout)
+        main_layout.setSpacing(16)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+
+        # ===== TÍTULO DESCRIPTIVO =====
+        title_label = QLabel(
+            "Editar información del producto"
+            if entrada else "Registrar nuevo producto"
+        )
+        title_label.setStyleSheet("font-size: 13px; font-weight: 600; opacity: 0.9;")
+        main_layout.addWidget(title_label)
+
+        # ===== FORMULARIO =====
+        form_layout = QFormLayout()
+        form_layout.setSpacing(12)
+        form_layout.setLabelAlignment(Qt.AlignRight)
 
         # ----- CAMPOS PRINCIPALES -----
-        # Ya no necesitamos código y fecha - una entrada ahora es solo crear un producto
-        
         self.txt_descripcion = QLineEdit()
         
-        # Campos de unidad y stock mínimo (siempre visibles)
+        # Campos de unidad y stock mínimo
         self.cmb_unidad = QComboBox()
         unidades = ["Pza", "Kg", "Mt", "Lt", "Caja", "Rollo", "Tubo", "Otro"]
         self.cmb_unidad.addItems(unidades)
@@ -41,17 +54,21 @@ class EntradaDialog(QDialog):
         self.spin_stock_minimo = QSpinBox()
         self.spin_stock_minimo.setRange(0, 999999)
         self.spin_stock_minimo.setValue(5)
+        self.spin_stock_minimo.setMinimumHeight(36)
         
         self.spin_cantidad = QSpinBox()
         self.spin_cantidad.setRange(1, 100000)
+        self.spin_cantidad.setMinimumHeight(36)
         
         self.cmb_proveedor = QComboBox()
         self.cmb_proveedor.setEditable(False)
+        self.cmb_proveedor.setMinimumHeight(36)
         
         self.txt_ubicacion = QLineEdit()
         
         self.cmb_recibio = QComboBox()
         self.cmb_recibio.setEditable(False)
+        self.cmb_recibio.setMinimumHeight(36)
         
         self.txt_obs = QLineEdit()
 
@@ -62,9 +79,9 @@ class EntradaDialog(QDialog):
         self.load_trabajadores()
 
         # Placeholders
-        self.txt_descripcion.setPlaceholderText("Descripción del producto")
-        self.txt_ubicacion.setPlaceholderText("Ubicación del almacén")
-        self.txt_obs.setPlaceholderText("Observaciones")
+        self.txt_descripcion.setPlaceholderText("Ej: Cemento Portland 50kg")
+        self.txt_ubicacion.setPlaceholderText("Ej: Pasillo 2 - Estante A")
+        self.txt_obs.setPlaceholderText("Observaciones (opcional)")
 
         # Cargar datos si es edición
         if entrada:
@@ -74,27 +91,33 @@ class EntradaDialog(QDialog):
             self.txt_ubicacion.setText(entrada.ubicacion)
             self.cmb_recibio.setCurrentText(entrada.recibio)
             self.txt_obs.setText(entrada.observaciones)
-        else:
-            # Nueva entrada - valores por defecto
-            pass
 
-        layout.addRow("Descripción:", self.txt_descripcion)
-        layout.addRow("Unidad:", self.cmb_unidad)
-        layout.addRow("Stock Mínimo:", self.spin_stock_minimo)
-        layout.addRow("Cantidad:", self.spin_cantidad)
-        layout.addRow("Proveedor:", self.cmb_proveedor)
-        layout.addRow("Ubicación:", self.txt_ubicacion)
-        layout.addRow("Recibió:", self.cmb_recibio)
-        layout.addRow("Observaciones:", self.txt_obs)
+        form_layout.addRow("Descripción:", self.txt_descripcion)
+        form_layout.addRow("Unidad:", self.cmb_unidad)
+        form_layout.addRow("Stock Mínimo:", self.spin_stock_minimo)
+        form_layout.addRow("Cantidad:", self.spin_cantidad)
+        form_layout.addRow("Proveedor:", self.cmb_proveedor)
+        form_layout.addRow("Ubicación:", self.txt_ubicacion)
+        form_layout.addRow("Recibió:", self.cmb_recibio)
+        form_layout.addRow("Observaciones:", self.txt_obs)
+
+        main_layout.addLayout(form_layout)
+        main_layout.addStretch()
 
         # ----- BOTONES -----
         btn_layout = QHBoxLayout()
         self.btn_guardar = QPushButton("Guardar")
         self.btn_cancelar = QPushButton("Cancelar")
 
+        self.btn_guardar.setObjectName("PrimaryButton")
+        self.btn_cancelar.setObjectName("ActionButton")
+        
+        self.btn_guardar.setMinimumHeight(40)
+        self.btn_cancelar.setMinimumHeight(40)
+
         btn_layout.addStretch()
-        btn_layout.addWidget(self.btn_guardar)
-        btn_layout.addWidget(self.btn_cancelar)
+        btn_layout.addWidget(self.btn_cancelar, 1)
+        btn_layout.addWidget(self.btn_guardar, 1)
 
         main_layout.addLayout(btn_layout)
 
@@ -105,6 +128,7 @@ class EntradaDialog(QDialog):
     def load_proveedores(self):
         """Carga los proveedores registrados en la BD"""
         self.cmb_proveedor.clear()
+        self.cmb_proveedor.addItem("Sin proveedor")
         try:
             from app.core.proveedor_db import fetch_all_proveedores
             proveedores = fetch_all_proveedores()
@@ -118,6 +142,7 @@ class EntradaDialog(QDialog):
     def load_trabajadores(self):
         """Carga los trabajadores registrados en el store"""
         self.cmb_recibio.clear()
+        self.cmb_recibio.addItem("Sin asignar")
         try:
             for trab in store.trabajadores.values():
                 self.cmb_recibio.addItem(trab.nombre)
@@ -155,7 +180,7 @@ class EntradaDialog(QDialog):
 
                 store.update_entrada(self.entrada)
                 bitacora.log("Almacén", f"Producto actualizado: {self.entrada.partida} - {cantidad} {unidad}")
-                QMessageBox.information(self, "OK", "Producto actualizado")
+                QMessageBox.information(self, "Éxito", "Producto actualizado correctamente")
             else:
                 # Creación: generar partida automáticamente y crear producto
                 partida = store.generar_codigo_partida()
@@ -172,7 +197,7 @@ class EntradaDialog(QDialog):
                 )
                 store.add_producto(nuevo_producto)
                 bitacora.log("Almacén", f"Entrada registrada: {partida} ({descripcion}) - {cantidad} {unidad} | Proveedor: {proveedor} | Recibió: {recibio}")
-                QMessageBox.information(self, "OK", f"Producto registrado: {partida}")
+                QMessageBox.information(self, "Éxito", f"Producto registrado: {partida}")
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))

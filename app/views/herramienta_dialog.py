@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QSpinBox, QMessageBox
+    QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, 
+    QHBoxLayout, QSpinBox, QMessageBox, QLabel
 )
 from PySide6.QtCore import Qt
 
@@ -18,16 +19,33 @@ class HerramientaDialog(QDialog):
         if herramienta:
             self.setWindowTitle("Editar Herramienta")
         else:
-            self.setWindowTitle("Agregar Herramienta")
+            self.setWindowTitle("Nueva Herramienta")
 
-        self.setMinimumWidth(450)
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(400)
 
-        layout = QFormLayout(self)
-        layout.setSpacing(16)
+        # ===== LAYOUT PRINCIPAL =====
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(16)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+
+        # ===== TÍTULO DESCRIPTIVO =====
+        title_label = QLabel(
+            "Editar información de la herramienta" 
+            if herramienta else "Registrar nueva herramienta"
+        )
+        title_label.setStyleSheet("font-size: 13px; font-weight: 600; opacity: 0.9;")
+        main_layout.addWidget(title_label)
+
+        # ===== FORMULARIO =====
+        form_layout = QFormLayout()
+        form_layout.setSpacing(12)
+        form_layout.setLabelAlignment(Qt.AlignRight)
 
         # ----- CAMPOS PRINCIPALES -----
         self.txt_codigo = QLineEdit()
         self.txt_codigo.setReadOnly(True)
+        self.txt_codigo.setStyleSheet("background-color: rgba(128, 128, 128, 0.1);")
         self.txt_descripcion = QLineEdit()
         self.txt_ubicacion = QLineEdit()
         self.spin_cantidad = QSpinBox()
@@ -35,12 +53,13 @@ class HerramientaDialog(QDialog):
 
         # Configurar spinbox
         self.spin_cantidad.setRange(0, 999)
+        self.spin_cantidad.setMinimumHeight(36)
 
         # Placeholders
         self.txt_codigo.setPlaceholderText("Código automático")
-        self.txt_descripcion.setPlaceholderText("Descripción de la herramienta")
-        self.txt_ubicacion.setPlaceholderText("Ej: Gaveta Herramientas")
-        self.txt_obs.setPlaceholderText("Observaciones")
+        self.txt_descripcion.setPlaceholderText("Ej: Destornillador de cabeza plana")
+        self.txt_ubicacion.setPlaceholderText("Ej: Gaveta A - Estante 2")
+        self.txt_obs.setPlaceholderText("Observaciones (opcional)")
 
         # Cargar datos si es edición
         if herramienta:
@@ -54,22 +73,31 @@ class HerramientaDialog(QDialog):
             codigo_auto = store.generar_codigo_herramienta()
             self.txt_codigo.setText(codigo_auto)
 
-        layout.addRow("Código:", self.txt_codigo)
-        layout.addRow("Descripción:", self.txt_descripcion)
-        layout.addRow("Ubicación:", self.txt_ubicacion)
-        layout.addRow("Cantidad:", self.spin_cantidad)
-        layout.addRow("Observaciones:", self.txt_obs)
+        form_layout.addRow("Código:", self.txt_codigo)
+        form_layout.addRow("Descripción:", self.txt_descripcion)
+        form_layout.addRow("Ubicación:", self.txt_ubicacion)
+        form_layout.addRow("Cantidad:", self.spin_cantidad)
+        form_layout.addRow("Observaciones:", self.txt_obs)
 
-        # ----- BOTONES -----
+        main_layout.addLayout(form_layout)
+        main_layout.addStretch()
+
+        # ----- BOTONES =====
         btn_layout = QHBoxLayout()
         self.btn_guardar = QPushButton("Guardar")
         self.btn_cancelar = QPushButton("Cancelar")
 
-        btn_layout.addStretch()
-        btn_layout.addWidget(self.btn_guardar)
-        btn_layout.addWidget(self.btn_cancelar)
+        self.btn_guardar.setObjectName("PrimaryButton")
+        self.btn_cancelar.setObjectName("ActionButton")
+        
+        self.btn_guardar.setMinimumHeight(40)
+        self.btn_cancelar.setMinimumHeight(40)
 
-        layout.addRow(btn_layout)
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancelar, 1)
+        btn_layout.addWidget(self.btn_guardar, 1)
+
+        main_layout.addLayout(btn_layout)
 
         # ----- CONEXIONES -----
         self.btn_guardar.clicked.connect(self.guardar)
@@ -95,7 +123,7 @@ class HerramientaDialog(QDialog):
 
             store.update_herramienta(self.herramienta)
             bitacora.log("Herramienta", f"Herramienta actualizada: {codigo}")
-            QMessageBox.information(self, "OK", "Herramienta actualizada")
+            QMessageBox.information(self, "Éxito", "Herramienta actualizada correctamente")
         else:
             # Creación: nueva herramienta
             herramientas = store.get_herramientas()
@@ -113,7 +141,7 @@ class HerramientaDialog(QDialog):
                 )
                 store.add_herramienta(h)
                 bitacora.log("Herramienta", f"Nueva herramienta registrada: {codigo} - {descripcion}")
-                QMessageBox.information(self, "OK", "Herramienta registrada")
+                QMessageBox.information(self, "Éxito", "Herramienta registrada correctamente")
             except Exception as e:
                 QMessageBox.critical(self, "Error", str(e))
                 return

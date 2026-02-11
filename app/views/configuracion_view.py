@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
-    QPushButton, QMessageBox, QFrame, QComboBox, QApplication, QDialog, QTableWidget, QTableWidgetItem, QHBoxLayout
+    QPushButton, QMessageBox, QFrame, QComboBox, QApplication, QDialog, 
+    QTableWidget, QTableWidgetItem, QHBoxLayout, QSpacerItem, QSizePolicy
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -15,126 +16,119 @@ class ConfiguracionView(QWidget):
     def __init__(self):
         super().__init__()
 
-        layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(30, 30, 30, 30)
 
-        # ===== INFO SISTEMA =====
-        info = QFrame()
-        info.setFrameShape(QFrame.Box)
-        info.setStyleSheet("""
-            QFrame {
-                border-radius: 10px;
-                border: 1px solid #444;
-                background-color: #1e1e1e;
-                padding: 16px;
+        # ===== INFORMACIÓN DEL SISTEMA =====
+        info_frame = QFrame()
+        info_frame.setObjectName("InfoFrame")
+        info_frame.setStyleSheet("""
+            QFrame#InfoFrame {
+                border-radius: 8px;
+                border: 1px solid #30363d;
+                padding: 20px;
             }
         """)
+        
+        info_layout = QVBoxLayout(info_frame)
+        info_layout.setSpacing(8)
+        info_layout.setContentsMargins(0, 0, 0, 0)
 
-        info_layout = QVBoxLayout(info)
-        # asegurar márgenes y espaciado para que los elementos estén agrupados
-        info_layout.setContentsMargins(16, 12, 16, 12)
-        info_layout.setSpacing(6)
+        title = QLabel("Sistema GDA")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("font-size: 18px; font-weight: 700; letter-spacing: 0.3px;")
 
-        lbl_titulo = QLabel("Sistema GDA")
-        lbl_titulo.setAlignment(Qt.AlignCenter)
-        lbl_titulo.setStyleSheet("font-size: 22px; font-weight: bold; color: white;")
+        version = QLabel("Versión: Demo 3.4")
+        version.setAlignment(Qt.AlignCenter)
+        version.setStyleSheet("font-size: 12px; opacity: 0.9;")
 
-        lbl_version = QLabel("Versión: Demo 2.1")
-        lbl_version.setAlignment(Qt.AlignCenter)
-        lbl_version.setStyleSheet("color: #ccc;")
-
-        lbl_desc = QLabel(
+        description = QLabel(
             "Sistema de Gestión de Almacén\n"
-            "Demo funcional sin base de datos\n"
-            "Desarrollado para presentación"
+            "Gestión eficiente de inventario y herramientas\n"
+            "Desarrollado para pequeños y medianos almacenes"
         )
-        lbl_desc.setAlignment(Qt.AlignCenter)
-        lbl_desc.setStyleSheet("color: #aaa;")
+        description.setAlignment(Qt.AlignCenter)
+        description.setStyleSheet("font-size: 13px; line-height: 1.6; opacity: 0.8;")
 
-        info_layout.addWidget(lbl_titulo)
-        info_layout.addWidget(lbl_version)
-        info_layout.addWidget(lbl_desc)
+        info_layout.addWidget(title)
+        info_layout.addWidget(version)
+        info_layout.addSpacing(8)
+        info_layout.addWidget(description)
 
-        # ===== DERECHOS RESERVADOS =====
-        footer_frame = QFrame()
-        footer_frame.setFrameShape(QFrame.NoFrame)
-        footer_layout = QVBoxLayout(footer_frame)
-        footer_layout.setContentsMargins(0, 0, 0, 0)
-        footer_layout.setSpacing(4)
+        main_layout.addWidget(info_frame)
 
-        lbl_footer = QLabel("Derechos reservados a TechCenter")
-        lbl_footer.setAlignment(Qt.AlignCenter)
-        lbl_footer.setStyleSheet("color: #777; font-size: 11px;")
-        footer_layout.addWidget(lbl_footer)
-
-        # Imagen dentro del mismo contenedor de derechos reservados
-        footer_logo = QLabel()
-        fpix = QPixmap("resources/techcenter-logo.png")
-        if fpix.isNull():
-            fpix = QPixmap("resources/techcenter.png")
-        if not fpix.isNull():
-            fpix = fpix.scaledToWidth(120, Qt.SmoothTransformation)
-            footer_logo.setPixmap(fpix)
-            footer_logo.setAlignment(Qt.AlignCenter)
-            footer_layout.addWidget(footer_logo)
-
-        info_layout.addWidget(footer_frame)
-
-
-
-        layout.addWidget(info)
-
-        # ===== TEMA (selector simple) =====
-        lbl_selec = QLabel("Seleccionar tema:")
-        lbl_selec.setStyleSheet("color: #ccc; margin-top:8px;")
-        layout.addWidget(lbl_selec)
+        # ===== SELECTOR DE TEMA =====
+        theme_section_layout = QVBoxLayout()
+        theme_section_layout.setSpacing(12)
+        
+        theme_label = QLabel("Seleccionar tema:")
+        theme_label.setStyleSheet("font-size: 13px; font-weight: 600;")
+        theme_section_layout.addWidget(theme_label)
 
         self.cmb_tema = QComboBox()
         self.cmb_tema.addItems(["Oscuro", "Claro"])
-        # establecer valor actual desde config
-        cur = "Oscuro" if getattr(config, "theme", "dark") == "dark" else "Claro"
-        self.cmb_tema.setCurrentText(cur)
+        current_theme = "Oscuro" if getattr(config, "theme", "dark") == "dark" else "Claro"
+        self.cmb_tema.setCurrentText(current_theme)
+        self.cmb_tema.setMinimumHeight(36)
         self.cmb_tema.currentTextChanged.connect(self.on_theme_changed)
-        layout.addWidget(self.cmb_tema)
+        theme_section_layout.addWidget(self.cmb_tema)
+        
+        main_layout.addLayout(theme_section_layout)
 
-        # ===== BOTONES =====
-        btn_reset = QPushButton("Reiniciar datos de demo")
-        btn_reset.setStyleSheet("""
-            QPushButton {
-                padding: 10px;
-                font-size: 14px;
-            }
-        """)
+        # ===== SECCIÓN DE GESTIÓN =====
+        management_label = QLabel("Administración del sistema:")
+        management_label.setStyleSheet("font-size: 13px; font-weight: 600;")
+        main_layout.addWidget(management_label)
 
-        btn_reset.clicked.connect(self.reset_demo)
+        # Contenedor para botones
+        btn_container_layout = QVBoxLayout()
+        btn_container_layout.setSpacing(10)
 
         btn_trabajadores = QPushButton("Gestionar Trabajadores")
-        btn_trabajadores.setStyleSheet("""
-            QPushButton {
-                padding: 10px;
-                font-size: 14px;
-            }
-        """)
+        btn_trabajadores.setObjectName("ActionButton")
+        btn_trabajadores.setMinimumHeight(40)
+        btn_trabajadores.setCursor(Qt.PointingHandCursor)
         btn_trabajadores.clicked.connect(self.abrir_gestor_trabajadores)
 
         btn_proveedores = QPushButton("Gestionar Proveedores")
-        btn_proveedores.setStyleSheet("""
-            QPushButton {
-                padding: 10px;
-                font-size: 14px;
-            }
-        """)
+        btn_proveedores.setObjectName("ActionButton")
+        btn_proveedores.setMinimumHeight(40)
+        btn_proveedores.setCursor(Qt.PointingHandCursor)
         btn_proveedores.clicked.connect(self.abrir_gestor_proveedores)
 
-        layout.addWidget(btn_trabajadores)
-        layout.addWidget(btn_proveedores)
-        layout.addWidget(btn_reset)
-        layout.addStretch()
+        btn_reset = QPushButton("Reiniciar datos de demo")
+        btn_reset.setObjectName("DangerButton")
+        btn_reset.setMinimumHeight(40)
+        btn_reset.setCursor(Qt.PointingHandCursor)
+        btn_reset.clicked.connect(self.reset_demo)
+
+        btn_container_layout.addWidget(btn_trabajadores)
+        btn_container_layout.addWidget(btn_proveedores)
+        btn_container_layout.addWidget(btn_reset)
+        
+        main_layout.addLayout(btn_container_layout)
+
+        # ===== ESPACIO VACÍO =====
+        main_layout.addStretch()
+
+        # ===== PIE DE PÁGINA =====
+        footer_layout = QVBoxLayout()
+        footer_layout.setSpacing(8)
+        footer_layout.setContentsMargins(0, 20, 0, 0)
+
+        footer_label = QLabel("© 2026 TechCenter - Todos los derechos reservados")
+        footer_label.setAlignment(Qt.AlignCenter)
+        footer_label.setStyleSheet("font-size: 11px; opacity: 0.6;")
+        footer_layout.addWidget(footer_label)
+
+        main_layout.addLayout(footer_layout)
 
     def reset_demo(self):
         reply = QMessageBox.question(
             self,
             "Confirmar",
-            "¿Reiniciar todos los datos de la demo?",
+            "¿Reiniciar todos los datos de la demo?\n\nEsta acción no se puede deshacer.",
             QMessageBox.Yes | QMessageBox.No
         )
 
@@ -148,23 +142,22 @@ class ConfiguracionView(QWidget):
             store.seed_demo()
             store.notify()
 
-
             QMessageBox.information(
                 self,
                 "Listo",
-                "Datos de la demo reiniciados"
+                "Datos de la demo reiniciados correctamente"
             )
 
     def on_theme_changed(self, text):
-        # mapa visible -> valor guardado
-        theme = "dark" if text == "Oscuro" else "light"
+        # Extraer tema del texto (incluyendo emojis)
+        theme = "dark" if "Oscuro" in text else "light"
         config.theme = theme
         try:
             config.save()
         except Exception:
             pass
 
-        # aplicar estilo si la app está activa
+        # Aplicar estilo si la app está activa
         app = QApplication.instance()
         if app:
             qss_path = "app/styles/dark.qss" if theme == "dark" else "app/styles/light.qss"
@@ -179,22 +172,38 @@ class ConfiguracionView(QWidget):
         dialog = QDialog(self)
         dialog.setAttribute(Qt.WA_StyledBackground, True)
         dialog.setWindowTitle("Gestionar Trabajadores")
-        dialog.setMinimumSize(600, 400)
+        dialog.setMinimumSize(650, 450)
 
         layout = QVBoxLayout(dialog)
+        layout.setSpacing(16)
+        layout.setContentsMargins(20, 20, 20, 20)
 
         # Tabla de trabajadores
         self.table = QTableWidget(0, 2)
         self.table.setHorizontalHeaderLabels(["Nombre", "Identificación"])
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setAlternatingRowColors(True)
         layout.addWidget(self.table)
 
         # Botones
         btn_layout = QHBoxLayout()
-        btn_agregar = QPushButton("+ Agregar")
-        btn_editar = QPushButton("✎ Editar")
-        btn_eliminar = QPushButton("✕ Eliminar")
+        btn_layout.setSpacing(10)
+        
+        btn_agregar = QPushButton("Agregar")
+        btn_editar = QPushButton("Editar")
+        btn_eliminar = QPushButton("Eliminar")
         btn_cerrar = QPushButton("Cerrar")
+
+        btn_agregar.setObjectName("PrimaryButton")
+        btn_editar.setObjectName("ActionButton")
+        btn_eliminar.setObjectName("DangerButton")
+        btn_cerrar.setObjectName("ActionButton")
+        
+        btn_agregar.setMinimumHeight(36)
+        btn_editar.setMinimumHeight(36)
+        btn_eliminar.setMinimumHeight(36)
+        btn_cerrar.setMinimumHeight(36)
 
         btn_agregar.clicked.connect(lambda: self.agregar_trabajador(dialog))
         btn_editar.clicked.connect(lambda: self.editar_trabajador(dialog))
@@ -281,22 +290,38 @@ class ConfiguracionView(QWidget):
         dialog = QDialog(self)
         dialog.setAttribute(Qt.WA_StyledBackground, True)
         dialog.setWindowTitle("Gestionar Proveedores")
-        dialog.setMinimumSize(700, 400)
+        dialog.setMinimumSize(750, 450)
 
         layout = QVBoxLayout(dialog)
+        layout.setSpacing(16)
+        layout.setContentsMargins(20, 20, 20, 20)
 
         # Tabla de proveedores
         self.table_prov = QTableWidget(0, 4)
         self.table_prov.setHorizontalHeaderLabels(["Nombre Comercial", "Nombre Fiscal", "Ubicación", "Teléfono"])
         self.table_prov.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table_prov.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table_prov.setAlternatingRowColors(True)
         layout.addWidget(self.table_prov)
 
         # Botones
         btn_layout = QHBoxLayout()
-        btn_agregar = QPushButton("+ Agregar")
-        btn_editar = QPushButton("✎ Editar")
-        btn_eliminar = QPushButton("✕ Eliminar")
+        btn_layout.setSpacing(10)
+        
+        btn_agregar = QPushButton("Agregar")
+        btn_editar = QPushButton("Editar")
+        btn_eliminar = QPushButton("Eliminar")
         btn_cerrar = QPushButton("Cerrar")
+
+        btn_agregar.setObjectName("PrimaryButton")
+        btn_editar.setObjectName("ActionButton")
+        btn_eliminar.setObjectName("DangerButton")
+        btn_cerrar.setObjectName("ActionButton")
+        
+        btn_agregar.setMinimumHeight(36)
+        btn_editar.setMinimumHeight(36)
+        btn_eliminar.setMinimumHeight(36)
+        btn_cerrar.setMinimumHeight(36)
 
         btn_agregar.clicked.connect(lambda: self.agregar_proveedor(dialog))
         btn_editar.clicked.connect(lambda: self.editar_proveedor(dialog))
