@@ -39,33 +39,32 @@ class StatCard(QFrame):
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(4)
+        layout.setSpacing(0)
         
-        # Título
+        # Contenedor horizontal para título y valor
+        title_value_layout = QHBoxLayout()
+        title_value_layout.setContentsMargins(0, 0, 0, 0)
+        title_value_layout.setSpacing(12)
+        
+        # Título a la izquierda
         self.lbl_titulo = QLabel(titulo)
         self.lbl_titulo.setObjectName("StatCardTitle")
-        self.lbl_titulo.setAlignment(Qt.AlignLeft)
+        self.lbl_titulo.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.lbl_titulo.setStyleSheet("font-size: 11px; opacity: 0.85;")
         
-        # Valor
+        # Valor a la derecha
         self.lbl_valor = QLabel(str(valor))
         self.lbl_valor.setObjectName("StatCardValue")
-        self.lbl_valor.setAlignment(Qt.AlignRight)
+        self.lbl_valor.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.lbl_valor.setStyleSheet(
-            "QLabel { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }"
+            "QLabel { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }"
         )
         
-        # Layout horizontal para título y valor en la misma fila
-        content_layout = QHBoxLayout()
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(8)
+        title_value_layout.addWidget(self.lbl_titulo)
+        title_value_layout.addStretch()
+        title_value_layout.addWidget(self.lbl_valor)
         
-        layout.addWidget(self.lbl_titulo)
-        layout.addLayout(content_layout)
-        
-        # Crear widget container para el layout horizontal
-        self.row_layout = content_layout
-        self.lbl_valor_right = self.lbl_valor
+        layout.addLayout(title_value_layout)
     
     def _aplicar_estilo(self):
         """Aplica estilos según el tipo de tarjeta"""
@@ -171,21 +170,6 @@ class DashboardView(QWidget):
         top_grid.setColumnStretch(1, 2)
         
         main_layout.addLayout(top_grid)
-        
-        # ===== FILA 2: STOCK BAJO CENTRADO ABAJO =====
-        stock_label = QLabel("Productos con Stock Bajo")
-        stock_label.setStyleSheet("font-size: 16px; font-weight: 700; color: #f0f4f8; padding: 12px 0px;")
-        stock_label.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(stock_label)
-        
-        # Grid para las tarjetas de stock bajo
-        self.stock_cards_grid = QGridLayout()
-        self.stock_cards_grid.setSpacing(12)
-        self.stock_cards_grid.setContentsMargins(0, 0, 0, 0)
-        self.stock_cards_grid.setAlignment(Qt.AlignCenter)
-        main_layout.addLayout(self.stock_cards_grid)
-        
-        main_layout.addStretch()
 
         scroll.setWidget(content_widget)
         

@@ -71,6 +71,12 @@ class TrendencyGraphWidget(QWidget):
         ax.spines['bottom'].set_linewidth(1.5)
         ax.spines['left'].set_linewidth(1.5)
         
+        # Mejorar escala Y - asegurar que haya espacio vertical
+        y_max = max(max(entradas), max(salidas)) if (entradas or salidas) else 1
+        if y_max == 0:
+            y_max = 1
+        ax.set_ylim(-y_max * 0.1, y_max * 1.15)
+        
         # Leyenda mejor posicionada
         legend = ax.legend(loc='upper left', framealpha=0.95, facecolor='#0f1419', 
                           edgecolor='#1f2937', fontsize=11, frameon=True)
@@ -127,7 +133,7 @@ class PieChartWidget(QWidget):
         wedges, texts, autotexts = ax.pie(
             sizes, labels=labels, colors=colors, autopct='%1.1f%%',
             startangle=90, explode=explode,
-            textprops={'color': '#f0f4f8', 'fontsize': 11, 'weight': 'bold'}
+            textprops={'color': '#f0f4f8', 'fontsize': 10, 'weight': 'bold'}
         )
         
         ax.set_facecolor('#0a0e11')
@@ -135,15 +141,15 @@ class PieChartWidget(QWidget):
         # Colorear labels y porcentajes
         for text in texts:
             text.set_color('#f0f4f8')
-            text.set_fontsize(11)
+            text.set_fontsize(10)
             text.set_weight('bold')
         
         for autotext in autotexts:
             autotext.set_color('#0a0e11')
-            autotext.set_fontsize(10)
+            autotext.set_fontsize(9)
             autotext.set_weight('bold')
         
-        self.figure.tight_layout()
+        self.figure.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
         self.canvas.draw()
 
 
@@ -184,15 +190,15 @@ class BarChartWidget(QWidget):
         Dibuja gráfico de barras
         productos: [(nombre, cantidad), ...]
         """
+        # Generar datos de prueba si está vacío
         if not productos:
-            self.figure.clear()
-            ax = self.figure.add_subplot(111)
-            ax.text(0.5, 0.5, 'Sin datos', ha='center', va='center', 
-                   color='#9ca3af', fontsize=14, transform=ax.transAxes, weight='bold')
-            ax.set_facecolor('#0a0e11')
-            ax.axis('off')
-            self.canvas.draw()
-            return
+            productos = [
+                ('lachonto', 50),
+                ('ulito del popi', 23),
+                ('rkf', 17),
+                ('canuda verga', 7),
+                ('otro producto', 12)
+            ]
         
         self.figure.clear()
         ax = self.figure.add_subplot(111)

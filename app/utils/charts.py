@@ -54,6 +54,14 @@ def procesar_entradas_vs_salidas(entradas, salidas, n_dias: int = 7) -> Tuple[Di
     entradas_resultado = {fecha: entradas_por_dia.get(fecha, 0) for fecha in fechas}
     salidas_resultado = {fecha: salidas_por_dia.get(fecha, 0) for fecha in fechas}
     
+    # Si no hay datos reales, generar datos de demostración
+    if all(v == 0 for v in entradas_resultado.values()) and all(v == 0 for v in salidas_resultado.values()):
+        # Datos de demostración
+        datos_demo_ent = [5, 12, 8, 15, 10, 20, 18]
+        datos_demo_sal = [3, 7, 5, 10, 8, 12, 14]
+        entradas_resultado = {fecha: datos_demo_ent[i] for i, fecha in enumerate(fechas)}
+        salidas_resultado = {fecha: datos_demo_sal[i] for i, fecha in enumerate(fechas)}
+    
     return entradas_resultado, salidas_resultado
 
 
@@ -113,4 +121,16 @@ def procesar_productos_mas_movidos(
         reverse=True
     )
     
-    return ordenado[:n_top]
+    resultado = ordenado[:n_top]
+    
+    # Si no hay datos reales, generar datos de demostración
+    if not resultado:
+        resultado = [
+            ('lachonto', 50),
+            ('ulito del popi', 23),
+            ('rkf', 17),
+            ('canuda verga', 7),
+            ('otro producto', 12)
+        ][:n_top]
+    
+    return resultado
