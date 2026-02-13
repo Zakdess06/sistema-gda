@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 
 from app.core.store import store, Entrada
 from app.core.bitacora import bitacora
+from app.core.event_manager import event_manager
 from app.views.entrada_dialog import EntradaDialog
 class EntradasView(QWidget):
     def __init__(self):
@@ -42,6 +43,9 @@ class EntradasView(QWidget):
         self.btn_eliminar.clicked.connect(self.eliminar)
 
         store.subscribe(self.load_entradas)
+        event_manager.entrada_added.connect(self.load_entradas)
+        event_manager.almacen_changed.connect(self.load_entradas)
+        event_manager.data_changed.connect(self.load_entradas)
         self.load_entradas()
 
     def selected_partida(self):

@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt, QDateTime, QTimer
 from datetime import datetime
 
 from app.core.store import store
+from app.core.event_manager import event_manager
 from app.controllers.prestamo_herramienta_controller import PrestamoHerramientaController
 from app.core.bitacora import bitacora
 
@@ -41,6 +42,10 @@ class PrestamoHerramientaView(QWidget):
 
         # Subscribirse a cambios en store
         store.subscribe(self.cargar_datos)
+        event_manager.prestamo_solicitado.connect(self.cargar_datos)
+        event_manager.prestamo_devuelto.connect(self.cargar_datos)
+        event_manager.herramienta_changed.connect(self.cargar_datos)
+        event_manager.data_changed.connect(self.cargar_datos)
         self.cargar_datos()
 
         # Timer para revisar préstamos vencidos cada minuto
@@ -280,6 +285,7 @@ class PrestamoHerramientaView(QWidget):
             self.combo_herramienta.addItem(f"{h.codigo} - {h.descripcion}", h.codigo)
 
         self.combo_herramienta.blockSignals(False)
+        # Forzar actualización aunque no haya cambio de índice
         self.actualizar_detalles_herramienta()
 
     def actualizar_combos_trabajadores(self):

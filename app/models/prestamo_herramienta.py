@@ -17,6 +17,8 @@ class PrestamoHerramienta:
     estado_herramienta_devolucion: str = ""
     comentarios: str = ""
     estado: str = "Activo"
+    cantidad: int = 1
+    fecha_regreso_estimada: str = ""
 
     def es_activo(self) -> bool:
         """Indica si el préstamo está activo (sin devolver)"""

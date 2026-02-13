@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont
 
 from app.core.store import store
+from app.core.event_manager import event_manager
 from app.utils.charts import (
     procesar_entradas_vs_salidas,
     procesar_herramientas_prestadas,
@@ -179,23 +180,48 @@ class DashboardView(QWidget):
         main_scroll_layout.addWidget(scroll)
 
         # ===== SUSCRIPCIÓN =====
+        # Método tradicional (backwards compatibility)
         store.subscribe(self.update_data)
+        
+        # Conectar señales de PyQt para actualizaciones en tiempo real
+        event_manager.almacen_changed.connect(self.update_data)
+        event_manager.entrada_added.connect(self.update_data)
+        event_manager.salida_added.connect(self.update_data)
+        event_manager.herramienta_changed.connect(self.update_data)
+        event_manager.prestamo_solicitado.connect(self.update_data)
+        event_manager.prestamo_devuelto.connect(self.update_data)
+        event_manager.data_changed.connect(self.update_data)
+        
+        # Carga inicial
         self.update_data()
 
     def update_data(self):
+        """Actualiza todos los datos del dashboard en tiempo real"""
+        # Recargar datos desde la base de datos para asegurar consistencia
         almacen = store.get_almacen()
         herramientas = store.get_herramientas()
+        
+        # Recargar entradas y salidas desde la BD
+        from app.core.entradas_db import fetch_all_entradas
+        from app.core.salidas_db import fetch_all_salidas
+        from app.core.prestamo_db import fetch_all_prestamos
+        entradas_actuales = fetch_all_entradas()
+        salidas_actuales = fetch_all_salidas()
+        prestamos_activos = fetch_all_prestamos()
+        
         self.card_productos.set_value(len(almacen))
         self.card_stock.set_value(
             sum(i.cantidad for i in almacen.values())
         )
-        self.card_entradas.set_value(len(store.entradas))
-        self.card_salidas.set_value(len(store.salidas))
+        self.card_entradas.set_value(len(entradas_actuales))
+        self.card_salidas.set_value(len(salidas_actuales))
         self.card_herramientas.set_value(len(herramientas))
-        self.card_prestadas.set_value(
-            sum(1 for h in herramientas.values()
-                if getattr(h, "estado", None) == "Prestada")
+        
+        # Contar préstamos activos (donde fecha_devolucion esté vacía)
+        prestamos_activos_count = sum(
+            1 for p in prestamos_activos if p.fecha_devolucion == ""
         )
+        self.card_prestadas.set_value(prestamos_activos_count)
 
         # ===== STOCK BAJO CON STATCARDS =====
         try:
@@ -226,20 +252,22 @@ class DashboardView(QWidget):
         try:
             # Gráfico de tendencias
             entradas_dict, salidas_dict = procesar_entradas_vs_salidas(
-                store.entradas, 
-                store.salidas, 
+                entradas_actuales, 
+                salidas_actuales, 
                 n_dias=7
             )
             self.graph_tendencia.plot_entradas_salidas(entradas_dict, salidas_dict)
             
-            # Gráfico de herramientas
-            prestadas, disponibles = procesar_herramientas_prestadas(herramientas)
+            # Gráfico de herramientas - pasar prestamos activos
+            from app.core.prestamo_db import fetch_all_prestamos
+            prestamos_actuales = fetch_all_prestamos()
+            prestadas, disponibles = procesar_herramientas_prestadas(herramientas, prestamos_actuales)
             self.graph_herramientas.plot_herramientas(prestadas, disponibles)
             
             # Gráfico de top productos
             top_productos = procesar_productos_mas_movidos(
-                store.entradas,
-                store.salidas,
+                entradas_actuales,
+                salidas_actuales,
                 n_top=5
             )
             self.graph_top_productos.plot_productos_top(top_productos)

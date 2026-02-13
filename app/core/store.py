@@ -3,6 +3,8 @@ from typing import Dict, List, Callable
 
 from app.core.config import config
 from app.core.bitacora import bitacora
+from app.core.event_manager import event_manager
+from app.models.prestamo_herramienta import PrestamoHerramienta
 
 
 # ===================== MODELOS =====================
@@ -72,26 +74,6 @@ class Trabajador:
     id: str
     nombre: str
     numero_identificacion: str = ""
-
-
-@dataclass
-class Prestamo:
-    id: str
-    herramienta_codigo: str
-    trabajador_solicita_id: str
-    trabajador_despacha_id: str
-    trabajador_recibe_id: str
-    fecha_prestamo: str
-    cantidad: int = 1
-    fecha_regreso_estimada: str = ""
-    fecha_devolucion: str = ""
-    estado_herramienta_prestamo: str = "Bueno"
-    estado_herramienta_devolucion: str = ""
-    comentarios: str = ""
-    
-    def es_activo(self) -> bool:
-        """Indica si el préstamo está activo (sin devolver)"""
-        return self.fecha_devolucion == ""
 
 
 # ===================== STORE =====================
@@ -167,26 +149,31 @@ class Store:
         from app.core.almacen_db import insert_almacen_item
         insert_almacen_item(item)
         self.notify()
+        event_manager.notify_almacen_change()
 
     def update_producto(self, item):
         from app.core.almacen_db import update_almacen_item
         update_almacen_item(item)
         self.notify()
+        event_manager.notify_almacen_change()
 
     def delete_producto(self, partida):
         from app.core.almacen_db import delete_almacen_item
         delete_almacen_item(partida)
         self.notify()
+        event_manager.notify_almacen_change()
 
     def __init__(self):
         from app.core.almacen_db import fetch_all_almacen
         from app.core.entradas_db import fetch_all_entradas
         from app.core.salidas_db import fetch_all_salidas
         from app.core.proveedor_db import fetch_all_proveedores
+        from app.core.prestamo_db import fetch_all_prestamos
         
         # Cargar desde BD
         self.entradas: List[Entrada] = fetch_all_entradas()
         self.salidas: List[Salida] = fetch_all_salidas()
+        self.prestamos: List[PrestamoHerramienta] = fetch_all_prestamos()
         self.herramientas: Dict[str, Herramienta] = {}
         self.trabajadores: Dict[str, Trabajador] = {}
         
@@ -203,7 +190,6 @@ class Store:
             )
             self.proveedores[str(prov_dict['id'])] = prov
         
-        self.prestamos: List[Prestamo] = []
         self._subscribers: List[Callable] = []
         self._almacen_cache = None  # Solo para compatibilidad, pero siempre se consulta la base
 
@@ -213,8 +199,12 @@ class Store:
             self._subscribers.append(callback)
 
     def notify(self):
+        """Notifica a todos los suscriptores de cambios"""
+        # Método tradicional de observadores
         for cb in self._subscribers:
             cb()
+        # Emitir señal de PyQt para sincronización en tiempo real
+        event_manager.notify_almacen_change()
 
     # ---------- HERRAMIENTAS (BASE DE DATOS) ----------
     def get_herramientas(self):
@@ -226,16 +216,19 @@ class Store:
         insert_herramienta(h)
         bitacora.log("Herramienta", f"Alta de herramienta {h.codigo} - {h.descripcion}")
         self.notify()
+        event_manager.notify_herramienta_change()
 
     def update_herramienta(self, h):
         from app.core.herramienta_db import update_herramienta
         update_herramienta(h)
         self.notify()
+        event_manager.notify_herramienta_change()
 
     def delete_herramienta(self, codigo):
         from app.core.herramienta_db import delete_herramienta
         delete_herramienta(codigo)
         self.notify()
+        event_manager.notify_herramienta_change()
 
     # ---------- PROVEEDORES (BASE DE DATOS) ----------
     def add_proveedor(self, proveedor: Proveedor):
@@ -244,11 +237,13 @@ class Store:
         proveedor.id = str(pid)
         self.proveedores[str(pid)] = proveedor
         self.notify()
+        event_manager.notify_almacen_change()
 
     def update_proveedor(self, proveedor: Proveedor):
         from app.core.proveedor_db import update_proveedor
         update_proveedor(int(proveedor.id), proveedor.nombre_comercial, proveedor.nombre_fiscal, proveedor.ubicacion, proveedor.telefono)
         self.notify()
+        event_manager.notify_almacen_change()
 
     def delete_proveedor(self, proveedor_id: str):
         from app.core.proveedor_db import delete_proveedor
@@ -256,6 +251,7 @@ class Store:
         if proveedor_id in self.proveedores:
             del self.proveedores[proveedor_id]
         self.notify()
+        event_manager.notify_almacen_change()
 
     def get_almacen(self):
         from app.core.almacen_db import fetch_all_almacen
@@ -280,12 +276,14 @@ class Store:
             f"{entrada.partida} +{entrada.cantidad} {entrada.unidad} | Recibió: {entrada.recibio}"
         )
         self.notify()
+        event_manager.notify_entrada_add()
 
     def update_entrada(self, entrada: Entrada):
         """Actualiza una entrada existente"""
         from app.core.entradas_db import update_entrada as update_entrada_db
         update_entrada_db(entrada)
         self.notify()
+        event_manager.notify_entrada_add()
 
     def add_salida(self, salida: Salida):
         from app.core.almacen_db import update_almacen_cantidad
@@ -315,11 +313,13 @@ class Store:
         )
 
         self.notify()
+        event_manager.notify_salida_add()
 
     # ---------- PRÉSTAMOS ----------
     def solicitar_prestamo(self, herramienta_codigo: str, trabajador_solicita_id: str, trabajador_despacha_id: str, cantidad: int = 1, estado_herramienta: str = "Bueno", fecha_regreso_estimada: str = ""):
         """Crear un nuevo préstamo de herramienta (solo desde herramientas registradas)"""
         from app.core.herramienta_db import update_herramienta
+        from app.core.prestamo_db import save_prestamo
         
         herramientas = self.get_herramientas()
 
@@ -345,15 +345,13 @@ class Store:
         from datetime import datetime
         prestamo_id = f"PR-{len(self.prestamos) + 1:04d}"
 
-        prestamo = Prestamo(
+        prestamo = PrestamoHerramienta(
             id=prestamo_id,
             herramienta_codigo=herramienta_codigo,
-            cantidad=cantidad,
             trabajador_solicita_id=trabajador_solicita_id,
             trabajador_despacha_id=trabajador_despacha_id,
             trabajador_recibe_id="",
             fecha_prestamo=datetime.now().strftime("%Y-%m-%d %H:%M"),
-            fecha_regreso_estimada=fecha_regreso_estimada,
             estado_herramienta_prestamo=estado_herramienta
         )
 
@@ -361,6 +359,9 @@ class Store:
         herramienta.cantidad -= cantidad
         herramienta.prestada = herramienta.cantidad <= 0
         update_herramienta(herramienta)
+        
+        # Guardar en BD
+        save_prestamo(prestamo)
         
         self.prestamos.append(prestamo)
 
@@ -370,11 +371,13 @@ class Store:
         )
 
         self.notify()
+        event_manager.notify_prestamo_solicitado()
         return prestamo
 
     def devolver_prestamo(self, prestamo_id: str, trabajador_recibe_id: str, estado_devolucion: str = "Bueno", comentarios: str = ""):
         """Registrar devolución de herramienta prestada"""
         from app.core.herramienta_db import update_herramienta
+        from app.core.prestamo_db import update_prestamo
         
         prestamo = None
         for p in self.prestamos:
@@ -394,6 +397,9 @@ class Store:
         prestamo.estado_herramienta_devolucion = estado_devolucion
         prestamo.comentarios = comentarios
 
+        # Guardar en BD
+        update_prestamo(prestamo)
+
         herramientas = self.get_herramientas()
         herramienta = herramientas.get(prestamo.herramienta_codigo)
         if herramienta:
@@ -407,6 +413,7 @@ class Store:
         )
 
         self.notify()
+        event_manager.notify_prestamo_devuelto()
 
     # ---------- ALERTAS ----------
     def productos_stock_bajo(self):

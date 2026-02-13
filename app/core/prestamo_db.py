@@ -1,9 +1,9 @@
 """Módulo para gestionar préstamos en la base de datos"""
 from app.core.database import get_connection
-from app.models.prestamo_herramienta import Prestamo
+from app.models.prestamo_herramienta import PrestamoHerramienta
 
 
-def save_prestamo(prestamo: Prestamo):
+def save_prestamo(prestamo: PrestamoHerramienta):
     """Guarda un préstamo en la base de datos"""
     try:
         conn = get_connection()
@@ -27,7 +27,7 @@ def save_prestamo(prestamo: Prestamo):
             prestamo.fecha_regreso_estimada,
             prestamo.fecha_devolucion,
             prestamo.estado_herramienta_prestamo,
-            prestamo.estado_devolucion,
+            prestamo.estado_herramienta_devolucion,
             prestamo.comentarios
         ))
         
@@ -39,7 +39,7 @@ def save_prestamo(prestamo: Prestamo):
         return False
 
 
-def update_prestamo(prestamo: Prestamo):
+def update_prestamo(prestamo: PrestamoHerramienta):
     """Actualiza un préstamo en la base de datos"""
     try:
         conn = get_connection()
@@ -53,7 +53,7 @@ def update_prestamo(prestamo: Prestamo):
         """, (
             prestamo.trabajador_recibe_id,
             prestamo.fecha_devolucion,
-            prestamo.estado_devolucion,
+            prestamo.estado_herramienta_devolucion,
             prestamo.comentarios,
             prestamo.id
         ))
@@ -85,7 +85,7 @@ def fetch_all_prestamos():
         
         prestamos = []
         for row in rows:
-            prestamo = Prestamo(
+            prestamo = PrestamoHerramienta(
                 id=row[0],
                 herramienta_codigo=row[1],
                 cantidad=row[2],
@@ -96,7 +96,7 @@ def fetch_all_prestamos():
                 fecha_regreso_estimada=row[7],
                 fecha_devolucion=row[8],
                 estado_herramienta_prestamo=row[9],
-                estado_devolucion=row[10],
+                estado_herramienta_devolucion=row[10],
                 comentarios=row[11]
             )
             prestamos.append(prestamo)

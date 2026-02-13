@@ -11,8 +11,8 @@ class TrendencyGraphWidget(QWidget):
     
     def __init__(self, titulo: str = "Tendencia"):
         super().__init__()
-        self.setMinimumHeight(280)
-        self.setMaximumHeight(320)
+        self.setMinimumHeight(220)
+        self.setMaximumHeight(260)
         self.setObjectName("GraphWidget")
         
         layout = QVBoxLayout(self)
@@ -23,16 +23,16 @@ class TrendencyGraphWidget(QWidget):
         titulo_label = QLabel(titulo)
         titulo_label.setStyleSheet("""
             QLabel {
-                font-size: 16px;
+                font-size: 14px;
                 font-weight: 700;
                 color: #f0f4f8;
-                padding: 8px 0px;
+                padding: 4px 0px;
             }
         """)
         layout.addWidget(titulo_label)
         
         # Canvas de matplotlib con fondo oscuro
-        self.figure = Figure(figsize=(10, 4), dpi=100)
+        self.figure = Figure(figsize=(8, 2.5), dpi=100)
         self.figure.patch.set_facecolor('#0a0e11')
         self.figure.patch.set_edgecolor('none')
         self.canvas = FigureCanvas(self.figure)
@@ -51,16 +51,16 @@ class TrendencyGraphWidget(QWidget):
         
         # Líneas
         ax.plot(x, entradas, marker='o', label='Entradas', 
-                color='#16a34a', linewidth=3, markersize=7, alpha=0.9)
+                color='#16a34a', linewidth=2.5, markersize=5, alpha=0.9)
         ax.plot(x, salidas, marker='s', label='Salidas', 
-                color='#2563eb', linewidth=3, markersize=7, alpha=0.9)
+                color='#2563eb', linewidth=2.5, markersize=5, alpha=0.9)
         
         # Configuración
         ax.set_xticks(x)
-        ax.set_xticklabels(fechas, rotation=45, ha='right', fontsize=10, color='#9ca3af', weight='bold')
-        ax.set_ylabel('Cantidad', fontsize=11, color='#9ca3af', weight='bold')
-        ax.tick_params(colors='#9ca3af', labelsize=10)
-        ax.grid(True, alpha=0.2, color='#1f2937', linestyle='--', linewidth=0.8)
+        ax.set_xticklabels(fechas, rotation=45, ha='right', fontsize=8, color='#9ca3af', weight='bold')
+        ax.set_ylabel('Cantidad', fontsize=9, color='#9ca3af', weight='bold')
+        ax.tick_params(colors='#9ca3af', labelsize=8)
+        ax.grid(True, alpha=0.2, color='#1f2937', linestyle='--', linewidth=0.5)
         
         # Colores
         ax.set_facecolor('#0a0e11')
@@ -68,8 +68,8 @@ class TrendencyGraphWidget(QWidget):
         ax.spines['left'].set_color('#1f2937')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_linewidth(1.5)
-        ax.spines['left'].set_linewidth(1.5)
+        ax.spines['bottom'].set_linewidth(1)
+        ax.spines['left'].set_linewidth(1)
         
         # Mejorar escala Y - asegurar que haya espacio vertical
         y_max = max(max(entradas), max(salidas)) if (entradas or salidas) else 1
@@ -79,13 +79,13 @@ class TrendencyGraphWidget(QWidget):
         
         # Leyenda mejor posicionada
         legend = ax.legend(loc='upper left', framealpha=0.95, facecolor='#0f1419', 
-                          edgecolor='#1f2937', fontsize=11, frameon=True)
+                          edgecolor='#1f2937', fontsize=9, frameon=True)
         for text in legend.get_texts():
             text.set_color('#f0f4f8')
             text.set_weight('bold')
         
         self.figure.tight_layout()
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
 
 class PieChartWidget(QWidget):
@@ -93,8 +93,8 @@ class PieChartWidget(QWidget):
     
     def __init__(self, titulo: str = "Distribución"):
         super().__init__()
-        self.setMinimumHeight(280)
-        self.setMaximumHeight(320)
+        self.setMinimumHeight(220)
+        self.setMaximumHeight(260)
         self.setObjectName("GraphWidget")
         
         layout = QVBoxLayout(self)
@@ -105,16 +105,16 @@ class PieChartWidget(QWidget):
         titulo_label = QLabel(titulo)
         titulo_label.setStyleSheet("""
             QLabel {
-                font-size: 16px;
+                font-size: 14px;
                 font-weight: 700;
                 color: #f0f4f8;
-                padding: 8px 0px;
+                padding: 4px 0px;
             }
         """)
         layout.addWidget(titulo_label)
         
         # Canvas
-        self.figure = Figure(figsize=(5, 4), dpi=100)
+        self.figure = Figure(figsize=(4, 2.2), dpi=100)
         self.figure.patch.set_facecolor('#0a0e11')
         self.figure.patch.set_edgecolor('none')
         self.canvas = FigureCanvas(self.figure)
@@ -133,7 +133,7 @@ class PieChartWidget(QWidget):
         wedges, texts, autotexts = ax.pie(
             sizes, labels=labels, colors=colors, autopct='%1.1f%%',
             startangle=90, explode=explode,
-            textprops={'color': '#f0f4f8', 'fontsize': 10, 'weight': 'bold'}
+            textprops={'color': '#f0f4f8', 'fontsize': 8, 'weight': 'bold'}
         )
         
         ax.set_facecolor('#0a0e11')
@@ -141,16 +141,16 @@ class PieChartWidget(QWidget):
         # Colorear labels y porcentajes
         for text in texts:
             text.set_color('#f0f4f8')
-            text.set_fontsize(10)
+            text.set_fontsize(8)
             text.set_weight('bold')
         
         for autotext in autotexts:
             autotext.set_color('#0a0e11')
-            autotext.set_fontsize(9)
+            autotext.set_fontsize(8)
             autotext.set_weight('bold')
         
         self.figure.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
 
 class BarChartWidget(QWidget):
@@ -158,8 +158,8 @@ class BarChartWidget(QWidget):
     
     def __init__(self, titulo: str = "Top Productos"):
         super().__init__()
-        self.setMinimumHeight(280)
-        self.setMaximumHeight(320)
+        self.setMinimumHeight(220)
+        self.setMaximumHeight(260)
         self.setObjectName("GraphWidget")
         
         layout = QVBoxLayout(self)
@@ -170,16 +170,16 @@ class BarChartWidget(QWidget):
         titulo_label = QLabel(titulo)
         titulo_label.setStyleSheet("""
             QLabel {
-                font-size: 16px;
+                font-size: 14px;
                 font-weight: 700;
                 color: #f0f4f8;
-                padding: 8px 0px;
+                padding: 4px 0px;
             }
         """)
         layout.addWidget(titulo_label)
         
         # Canvas
-        self.figure = Figure(figsize=(10, 4), dpi=100)
+        self.figure = Figure(figsize=(8, 2.5), dpi=100)
         self.figure.patch.set_facecolor('#0a0e11')
         self.figure.patch.set_edgecolor('none')
         self.canvas = FigureCanvas(self.figure)
@@ -190,30 +190,40 @@ class BarChartWidget(QWidget):
         Dibuja gráfico de barras
         productos: [(nombre, cantidad), ...]
         """
-        # Generar datos de prueba si está vacío
-        if not productos:
-            productos = [
-                ('lachonto', 50),
-                ('ulito del popi', 23),
-                ('rkf', 17),
-                ('canuda verga', 7),
-                ('otro producto', 12)
-            ]
-        
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         
-        nombres = [p[0][:20] + '...' if len(p[0]) > 20 else p[0] for p in productos]
+        # Si no hay productos, mostrar gráfico vacío
+        if not productos:
+            ax.text(0.5, 0.5, 'Sin datos de productos', 
+                   ha='center', va='center', fontsize=10, color='#9ca3af',
+                   transform=ax.transAxes)
+            ax.set_facecolor('#0a0e11')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+            self.canvas.draw_idle()
+            return
+        
+        # Truncar nombres más inteligentemente
+        nombres = []
+        for p in productos:
+            nombre = p[0]
+            if len(nombre) > 15:
+                nombre = nombre[:12] + '...'
+            nombres.append(nombre)
+        
         cantidades = [p[1] for p in productos]
         
-        bars = ax.barh(range(len(nombres)), cantidades, color='#2563eb', alpha=0.88, height=0.6)
+        bars = ax.barh(range(len(nombres)), cantidades, color='#2563eb', alpha=0.88, height=0.5)
         
         # Configuración
         ax.set_yticks(range(len(nombres)))
-        ax.set_yticklabels(nombres, fontsize=11, color='#f0f4f8', weight='bold')
-        ax.set_xlabel('Cantidad', fontsize=11, color='#9ca3af', weight='bold')
-        ax.tick_params(colors='#9ca3af', labelsize=10, axis='x')
-        ax.grid(True, alpha=0.2, axis='x', color='#1f2937', linestyle='--', linewidth=0.8)
+        ax.set_yticklabels(nombres, fontsize=9, color='#f0f4f8', weight='bold')
+        ax.set_xlabel('Cantidad', fontsize=9, color='#9ca3af', weight='bold')
+        ax.tick_params(colors='#9ca3af', labelsize=8, axis='x')
+        ax.grid(True, alpha=0.2, axis='x', color='#1f2937', linestyle='--', linewidth=0.5)
         
         # Colores
         ax.set_facecolor('#0a0e11')
@@ -221,15 +231,16 @@ class BarChartWidget(QWidget):
         ax.spines['left'].set_color('#1f2937')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_linewidth(1.5)
-        ax.spines['left'].set_linewidth(1.5)
+        ax.spines['bottom'].set_linewidth(1)
+        ax.spines['left'].set_linewidth(1)
         
         # Etiquetas en barras
         for i, (bar, cant) in enumerate(zip(bars, cantidades)):
             width = bar.get_width()
             ax.text(width + max(cantidades)*0.02, bar.get_y() + bar.get_height()/2,
-                   f'{int(cant)}', ha='left', va='center', fontsize=11,
+                   f'{int(cant)}', ha='left', va='center', fontsize=8,
                    color='#f0f4f8', weight='bold')
         
-        self.figure.tight_layout()
-        self.canvas.draw()
+        # Aumentar margen izquierdo para nombres
+        self.figure.subplots_adjust(left=0.25, right=0.95)
+        self.canvas.draw_idle()

@@ -66,11 +66,17 @@ def init_database():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS prestamos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            herramienta_id INTEGER,
-            trabajador_id INTEGER,
+            prestamo_id TEXT UNIQUE NOT NULL,
+            herramienta_codigo TEXT NOT NULL,
+            cantidad INTEGER,
+            trabajador_solicita_id TEXT,
+            trabajador_despacha_id TEXT,
+            trabajador_recibe_id TEXT,
             fecha_prestamo TEXT,
+            fecha_regreso_estimada TEXT,
             fecha_devolucion TEXT,
-            estado TEXT,
+            estado_herramienta_prestamo TEXT,
+            estado_devolucion TEXT,
             comentarios TEXT
         )
     """)
@@ -82,6 +88,22 @@ def init_database():
             fecha TEXT NOT NULL,
             tipo TEXT NOT NULL,
             mensaje TEXT NOT NULL
+        )
+    """)
+
+    # Tabla entradas (auditoría con fechas)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS entradas_auditoria (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT NOT NULL,
+            partida TEXT NOT NULL,
+            descripcion TEXT,
+            cantidad INTEGER,
+            unidad TEXT,
+            proveedor TEXT,
+            recibio TEXT,
+            ubicacion TEXT,
+            observaciones TEXT
         )
     """)
 

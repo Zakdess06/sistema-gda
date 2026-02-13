@@ -9,6 +9,7 @@ from PySide6.QtGui import QColor, QIcon
 from app.core.store import store, AlmacenItem
 from app.core.config import config
 from app.core.bitacora import bitacora
+from app.core.event_manager import event_manager
 from app.views.producto_dialog import ProductoDialog
 from app.views.restock_dialog import RestockDialog
 
@@ -56,6 +57,7 @@ class AlmacenView(QWidget):
 
         # escuchar cambios del store
         store.subscribe(self.load_data)
+        event_manager.almacen_changed.connect(self.load_data)
 
         self.load_data()
 

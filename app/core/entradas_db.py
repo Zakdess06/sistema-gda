@@ -8,13 +8,13 @@ from app.core.proveedor_db import get_or_create_proveedor
 
 
 def fetch_all_entradas():
-    """Obtiene todas las entradas (productos) de la BD"""
+    """Obtiene todas las entradas auditadas (con fechas reales)"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT partida, descripcion, cantidad, unidad, proveedor_id, ubicacion
-            FROM productos
+            SELECT fecha, partida, descripcion, cantidad, unidad, proveedor, recibio, ubicacion, observaciones
+            FROM entradas_auditoria
             ORDER BY id DESC
         """)
         rows = cursor.fetchall()
@@ -22,27 +22,18 @@ def fetch_all_entradas():
         
         items = []
         for row in rows:
-            partida, descripcion, cantidad, unidad, proveedor_id, ubicacion = row
-            
-            # Obtener nombre del proveedor
-            proveedor_nombre = ""
-            if proveedor_id:
-                from app.core.proveedor_db import fetch_proveedor_by_id
-                prov = fetch_proveedor_by_id(proveedor_id)
-                if prov:
-                    proveedor_nombre = prov.get('nombre_comercial', '')
-            
+            fecha, partida, descripcion, cantidad, unidad, proveedor, recibio, ubicacion, observaciones = row
             items.append(Entrada(
-                codigo="",  # No usamos código en el novo sistema
-                fecha="",   # Las entradas no tienen fecha en productos
+                codigo="",
+                fecha=fecha,
                 partida=partida,
                 descripcion=descripcion,
                 cantidad=cantidad,
                 unidad=unidad,
-                proveedor=proveedor_nombre,
-                recibio="",
+                proveedor=proveedor,
+                recibio=recibio,
                 ubicacion=ubicacion,
-                observaciones=""
+                observaciones=observaciones
             ))
         return items
     except Exception:
@@ -50,10 +41,36 @@ def fetch_all_entradas():
 
 
 def insert_entrada(entrada: Entrada):
-    """Inserta una nueva entrada (crea un nuevo producto)"""
+    """Inserta una nueva entrada en la auditoría y actualiza almacén"""
     from app.core.almacen_db import insert_almacen_item
     from app.core.store import AlmacenItem
+    from datetime import datetime
     
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Grabar en tabla de auditoría con fecha actual
+    fecha_actual = datetime.now().strftime("%d/%m/%Y")
+    cursor.execute("""
+        INSERT INTO entradas_auditoria 
+        (fecha, partida, descripcion, cantidad, unidad, proveedor, recibio, ubicacion, observaciones)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        fecha_actual,
+        entrada.partida,
+        entrada.descripcion,
+        entrada.cantidad,
+        entrada.unidad,
+        entrada.proveedor,
+        entrada.recibio,
+        entrada.ubicacion,
+        entrada.observaciones
+    ))
+    
+    conn.commit()
+    conn.close()
+    
+    # También actualizar almacén (producto)
     # Obtener o crear proveedor
     prov_id = None
     if entrada.proveedor:
@@ -80,15 +97,15 @@ def delete_entrada(partida: str):
 
 
 def update_entrada(entrada: Entrada):
-    """Actualiza una entrada (actualiza el producto)"""
+    """Actualiza una entrada (registra en auditoría)"""
     from app.core.almacen_db import update_almacen_item
     from app.core.store import AlmacenItem
+    from datetime import datetime
     
-    # Obtener o crear proveedor
-    prov_id = None
-    if entrada.proveedor:
-        prov_id = get_or_create_proveedor(entrada.proveedor, ubicacion=entrada.ubicacion or "")
+    # También registrar en auditoría
+    insert_entrada(entrada)
     
+    # Actualizar producto en almacén
     producto = AlmacenItem(
         partida=entrada.partida,
         descripcion=entrada.descripcion,

@@ -1,12 +1,15 @@
 import sys
+from pathlib import Path
+
+# Inicializar la base de datos ANTES de cualquier importación de modelos
+from app.core.database import init_database
+init_database()
+
 from PySide6.QtWidgets import QApplication
 from app.views.main_window import MainWindow
-from pathlib import Path
-from app.core.database import init_database
 
 
 def main():
-    init_database()
     app = QApplication(sys.argv)
 
     # cargar tema guardado (si existe)

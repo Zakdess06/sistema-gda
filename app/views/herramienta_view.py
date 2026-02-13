@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 
 from app.core.store import store, Herramienta
 from app.core.bitacora import bitacora
+from app.core.event_manager import event_manager
 from app.views.herramienta_dialog import HerramientaDialog
 
 
@@ -44,6 +45,7 @@ class HerramientasView(QWidget):
         self.btn_delete.clicked.connect(self.eliminar)
 
         store.subscribe(self.load_data)
+        event_manager.herramienta_changed.connect(self.load_data)
         self.load_data()
 
 
