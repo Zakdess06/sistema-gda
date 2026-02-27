@@ -12,7 +12,7 @@ from app.views.main_window import MainWindow
 def main():
     app = QApplication(sys.argv)
 
-    # cargar tema guardado (si existe)
+    # cargar tema guardado 
     try:
         from app.core.config import config
         theme = getattr(config, "theme", "dark")

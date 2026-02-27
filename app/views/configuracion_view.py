@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
     QPushButton, QMessageBox, QFrame, QComboBox, QApplication, QDialog, 
-    QTableWidget, QTableWidgetItem, QHBoxLayout, QSpacerItem, QSizePolicy
+    QTableWidget, QTableWidgetItem, QHBoxLayout, QSpacerItem, QSizePolicy,
+    QListWidget, QFileDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -10,6 +11,7 @@ from app.core.store import store
 from app.core.config import config
 from app.views.trabajador_dialog import TrabajadorDialog
 from app.views.proveedor_dialog import ProveedorDialog
+from app.utils.table_utils import ajustar_ancho_tabla
 
 
 class ConfiguracionView(QWidget):
@@ -97,14 +99,21 @@ class ConfiguracionView(QWidget):
         btn_proveedores.setCursor(Qt.PointingHandCursor)
         btn_proveedores.clicked.connect(self.abrir_gestor_proveedores)
 
-        btn_reset = QPushButton("Reiniciar datos de demo")
+        btn_backup = QPushButton("Respaldos del sistema")
+        btn_backup.setObjectName("ActionButton")
+        btn_backup.setMinimumHeight(40)
+        btn_backup.setCursor(Qt.PointingHandCursor)
+        btn_backup.clicked.connect(self.abrir_administrar_respaldo)
+
+        btn_reset = QPushButton("Eliminar todos los datos")
         btn_reset.setObjectName("DangerButton")
         btn_reset.setMinimumHeight(40)
         btn_reset.setCursor(Qt.PointingHandCursor)
-        btn_reset.clicked.connect(self.reset_demo)
+        btn_reset.clicked.connect(self.delete_all_data)
 
         btn_container_layout.addWidget(btn_trabajadores)
         btn_container_layout.addWidget(btn_proveedores)
+        btn_container_layout.addWidget(btn_backup)
         btn_container_layout.addWidget(btn_reset)
         
         main_layout.addLayout(btn_container_layout)
@@ -124,29 +133,216 @@ class ConfiguracionView(QWidget):
 
         main_layout.addLayout(footer_layout)
 
-    def reset_demo(self):
+    def delete_all_data(self):
         reply = QMessageBox.question(
             self,
-            "Confirmar",
-            "¿Reiniciar todos los datos de la demo?\n\nEsta acción no se puede deshacer.",
+            "Confirmar eliminación",
+            "¿Está seguro de que desea eliminar TODOS los datos?\n\nEsta acción no se puede deshacer.",
             QMessageBox.Yes | QMessageBox.No
         )
 
         if reply == QMessageBox.Yes:
-            store.almacen.clear()
-            store.entradas.clear()
-            store.salidas.clear()
-            store.herramientas.clear()
+            # Eliminar base de datos
+            import os
+            from app.core.database import DB_PATH, init_database
+            
+            try:
+                if os.path.exists(DB_PATH):
+                    os.remove(DB_PATH)
+                
+                # Reinicializar BD vacía
+                init_database()
+                
+                # Limpiar datos en memoria del store
+                # El almacen no se guarda como atributo, usamos el cache interno
+                if hasattr(store, '_almacen_cache'):
+                    store._almacen_cache = None
+                store.entradas.clear()
+                store.salidas.clear()
+                store.herramientas.clear()
+                store.prestamos.clear()
+                store.trabajadores.clear()
+                store.proveedores.clear()
+                
+                store.notify()
 
-            # volver a cargar demo
-            store.seed_demo()
-            store.notify()
+                QMessageBox.information(
+                    self,
+                    "Listo",
+                    "Todos los datos han sido eliminados correctamente"
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Error al eliminar datos: {str(e)}"
+                )
 
-            QMessageBox.information(
+    def crear_respaldo(self):
+        """Crea un respaldo del archivo de base de datos"""
+        import os
+        import shutil
+        from datetime import datetime
+        from app.core.database import DB_PATH
+        
+        try:
+            # Crear carpeta de respaldos si no existe
+            backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            # Generar nombre del respaldo con timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            backup_filename = f"database_{timestamp}.db"
+            backup_path = os.path.join(backup_dir, backup_filename)
+            
+            # Copiar el archivo
+            if os.path.exists(DB_PATH):
+                shutil.copy2(DB_PATH, backup_path)
+                
+                QMessageBox.information(
+                    self,
+                    "Respaldo completado",
+                    f"Respaldo creado exitosamente\n\nArchivo: {backup_filename}\nUbicación: backups/"
+                )
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Advertencia",
+                    "La base de datos no existe aún"
+                )
+        except Exception as e:
+            QMessageBox.critical(
                 self,
-                "Listo",
-                "Datos de la demo reiniciados correctamente"
+                "Error",
+                f"Error al crear respaldo: {str(e)}"
             )
+
+    def abrir_administrar_respaldo(self):
+        """Muestra un diálogo con lista de respaldos y opciones"""
+        import os
+        import shutil
+        from app.core.database import DB_PATH
+        from datetime import datetime
+        
+        dialog = QDialog(self)
+        dialog.setAttribute(Qt.WA_StyledBackground, True)
+        dialog.setWindowTitle("Respaldos del sistema")
+        dialog.setMinimumSize(550, 400)
+
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # etiqueta que muestra información del respaldo/carga actual
+        current_label = QLabel()
+        current_label.setStyleSheet("font-size: 13px; font-weight: 600;")
+        layout.addWidget(current_label)
+
+        list_widget = QListWidget()
+        layout.addWidget(list_widget)
+
+        def refresh_list():
+            list_widget.clear()
+            backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+            os.makedirs(backup_dir, exist_ok=True)
+            # agregar archivos .db ordenados por nombre inverso (más recientes primero)
+            for fname in sorted(os.listdir(backup_dir), reverse=True):
+                if fname.endswith(".db"):
+                    list_widget.addItem(fname)
+
+        def update_current_label():
+            if os.path.exists(DB_PATH):
+                mtime = datetime.fromtimestamp(os.path.getmtime(DB_PATH)).strftime("%Y-%m-%d %H:%M:%S")
+                current_label.setText(f"Base de datos activa (últ mod): {mtime}")
+            else:
+                current_label.setText("Base de datos activa: no existe")
+
+        refresh_list()
+        update_current_label()
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
+
+        btn_crear = QPushButton("Crear respaldo")
+        btn_restaurar = QPushButton("Restaurar")
+        btn_descargar = QPushButton("Descargar")
+        btn_cerrar = QPushButton("Cerrar")
+
+        btn_crear.setObjectName("PrimaryButton")
+        btn_restaurar.setObjectName("ActionButton")
+        btn_descargar.setObjectName("ActionButton")
+        btn_cerrar.setObjectName("ActionButton")
+
+        for btn in (btn_crear, btn_restaurar, btn_descargar, btn_cerrar):
+            btn.setMinimumHeight(36)
+
+        btn_layout.addWidget(btn_crear)
+        btn_layout.addWidget(btn_restaurar)
+        btn_layout.addWidget(btn_descargar)
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_cerrar)
+
+        layout.addLayout(btn_layout)
+
+        def hacer_crear():
+            self.crear_respaldo()
+            refresh_list()
+
+        def hacer_restaurar():
+            item = list_widget.currentItem()
+            if not item:
+                QMessageBox.warning(dialog, "Error", "Seleccione un respaldo")
+                return
+            reply = QMessageBox.question(
+                dialog,
+                "Confirmar restauración",
+                "Se sobrescribirá la base de datos actual. ¿Desea continuar?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+                src = os.path.join(backup_dir, item.text())
+                try:
+                    shutil.copy2(src, DB_PATH)
+                    QMessageBox.information(
+                        dialog,
+                        "Restaurado",
+                        "Respaldo restaurado correctamente. Reinicie la aplicación si es necesario."
+                    )
+                    update_current_label()
+                except Exception as e:
+                    QMessageBox.critical(dialog, "Error", f"Error al restaurar: {str(e)}")
+
+        def hacer_descargar():
+            item = list_widget.currentItem()
+            if not item:
+                QMessageBox.warning(dialog, "Error", "Seleccione un respaldo")
+                return
+            backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+            src = os.path.join(backup_dir, item.text())
+            dest, _ = QFileDialog.getSaveFileName(
+                dialog,
+                "Guardar respaldo como",
+                item.text(),
+                "Base de datos (*.db)"
+            )
+            if dest:
+                try:
+                    shutil.copy2(src, dest)
+                    QMessageBox.information(
+                        dialog,
+                        "Descargado",
+                        f"Respaldo guardado en:\n{dest}"
+                    )
+                except Exception as e:
+                    QMessageBox.critical(dialog, "Error", f"Error al descargar: {str(e)}")
+
+        btn_crear.clicked.connect(hacer_crear)
+        btn_restaurar.clicked.connect(hacer_restaurar)
+        btn_descargar.clicked.connect(hacer_descargar)
+        btn_cerrar.clicked.connect(dialog.accept)
+
+        dialog.exec()
 
     def on_theme_changed(self, text):
         # Extraer tema del texto (incluyendo emojis)
@@ -181,6 +377,7 @@ class ConfiguracionView(QWidget):
         # Tabla de trabajadores
         self.table = QTableWidget(0, 2)
         self.table.setHorizontalHeaderLabels(["Nombre", "Identificación"])
+        ajustar_ancho_tabla(self.table, anchos={0: 320, 1: 200})
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setAlternatingRowColors(True)
@@ -299,6 +496,7 @@ class ConfiguracionView(QWidget):
         # Tabla de proveedores
         self.table_prov = QTableWidget(0, 4)
         self.table_prov.setHorizontalHeaderLabels(["Nombre Comercial", "Nombre Fiscal", "Ubicación", "Teléfono"])
+        ajustar_ancho_tabla(self.table_prov, anchos={0: 260, 1: 240, 2: 220, 3: 140})
         self.table_prov.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table_prov.setSelectionBehavior(QTableWidget.SelectRows)
         self.table_prov.setAlternatingRowColors(True)

@@ -8,6 +8,7 @@ from datetime import datetime
 
 from app.core.store import store, Salida
 from app.core.bitacora import bitacora
+from app.utils.table_utils import ajustar_ancho_tabla
 class SalidasView(QWidget):
     def __init__(self):
         super().__init__()
@@ -63,6 +64,14 @@ class SalidasView(QWidget):
             "Fecha", "Trabajador", "Producto",
             "Cantidad", "Proyecto", "Destino"
         ])
+        ajustar_ancho_tabla(self.table, anchos={
+            0: 100,     # Fecha
+            1: 150,     # Trabajador
+            2: 160,     # Producto
+            3: 80,      # Cantidad
+            4: 180,     # Proyecto
+            5: 150      # Destino (se estira)
+        })
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         layout.addWidget(self.table)
 

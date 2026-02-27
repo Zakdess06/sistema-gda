@@ -12,6 +12,7 @@ from app.core.bitacora import bitacora
 from app.core.event_manager import event_manager
 from app.views.producto_dialog import ProductoDialog
 from app.views.restock_dialog import RestockDialog
+from app.utils.table_utils import ajustar_ancho_tabla
 
 
 class AlmacenView(QWidget):
@@ -42,10 +43,19 @@ class AlmacenView(QWidget):
             "⚠", "Partida", "Descripción", "Unidad",
             "Cantidad", "Stock Mín.", "Ubicación", "Proveedor"
         ])
-        self.table.setColumnWidth(0, 40)  # Columna de advertencia más estrecha
+        # Configurar anchos apropiados para cada columna
+        ajustar_ancho_tabla(self.table, anchos={
+            0: 40,      # Advertencia
+            1: 160,     # Partida
+            2: 250,     # Descripción
+            3: 70,      # Unidad
+            4: 80,      # Cantidad
+            5: 80,      # Stock Mín
+            6: 150,     # Ubicación
+            7: 150      # Proveedor (se estira)
+        })
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table.horizontalHeader().setStretchLastSection(True)
 
         layout.addWidget(self.table)
 

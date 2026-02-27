@@ -83,5 +83,36 @@ class TestBitacora(unittest.TestCase):
         self.assertEqual(logs[-1]['tipo'], 'TEST')
 
 
+class TestRespaldo(unittest.TestCase):
+    """Pruebas básicas para la funcionalidad de respaldos"""
+
+    @classmethod
+    def setUpClass(cls):
+        # asegurarse de que exista base de datos inicial y limpiar respaldos previos
+        init_database()
+        from app.core.database import DB_PATH
+        import os, shutil
+        backup_dir = os.path.join(os.path.dirname(DB_PATH), 'backups')
+        if os.path.exists(backup_dir):
+            shutil.rmtree(backup_dir)
+        # iniciar QApplication necesario para los widgets
+        from PySide6.QtWidgets import QApplication
+        cls.app = QApplication.instance() or QApplication([])
+
+    def test_crear_respaldo(self):
+        """Al invocar crear_respaldo debe generarse un archivo en el directorio backups"""
+        from app.views.configuracion_view import ConfiguracionView
+        from app.core.database import DB_PATH
+        import os
+
+        view = ConfiguracionView()
+        # crear respaldo
+        view.crear_respaldo()
+        backup_dir = os.path.join(os.path.dirname(DB_PATH), 'backups')
+        self.assertTrue(os.path.isdir(backup_dir))
+        files = [f for f in os.listdir(backup_dir) if f.endswith('.db')]
+        self.assertGreater(len(files), 0, 'No se generó ningún respaldo')
+
+
 if __name__ == '__main__':
     unittest.main()

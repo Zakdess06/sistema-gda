@@ -8,6 +8,7 @@ from app.core.store import store, Herramienta
 from app.core.bitacora import bitacora
 from app.core.event_manager import event_manager
 from app.views.herramienta_dialog import HerramientaDialog
+from app.utils.table_utils import ajustar_ancho_tabla
 
 
 class HerramientasView(QWidget):
@@ -35,6 +36,13 @@ class HerramientasView(QWidget):
         self.table.setHorizontalHeaderLabels([
             "Código", "Descripción", "Ubicación", "Cantidad", "Observaciones"
         ])
+        ajustar_ancho_tabla(self.table, anchos={
+            0: 100,   # Código
+            1: 280,   # Descripción
+            2: 150,   # Ubicación
+            3: 80,    # Cantidad
+            4: 200    # Observaciones (se estira)
+        })
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         layout.addWidget(self.table)

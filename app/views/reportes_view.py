@@ -10,6 +10,7 @@ from datetime import datetime
 from app.core.store import store
 from app.core.bitacora import bitacora
 from app.core.exporter import export_to_excel
+from app.utils.table_utils import ajustar_ancho_tabla
 
 
 class ReportesView(QWidget):
@@ -163,6 +164,9 @@ class ReportesView(QWidget):
         self.table.setRowCount(0)
         self.table.setColumnCount(len(headers))
         self.table.setHorizontalHeaderLabels(headers)
+
+        # Ajustar anchos según columnas actuales
+        ajustar_ancho_tabla(self.table)
 
         for row_data in rows:
             row = self.table.rowCount()

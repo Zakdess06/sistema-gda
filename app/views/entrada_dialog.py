@@ -7,6 +7,7 @@ from datetime import date
 
 from app.core.store import store, Entrada, AlmacenItem
 from app.core.bitacora import bitacora
+from app.core.event_manager import event_manager
 
 
 class EntradaDialog(QDialog):
@@ -169,7 +170,28 @@ class EntradaDialog(QDialog):
 
         try:
             if self.entrada:
-                # Edición: actualizar producto existente
+                # Edición: actualizar entrada en auditoría
+                from datetime import datetime
+                from app.core.entradas_db import insert_entrada
+                
+                # Crear nueva entrada en auditoría (registro de cambio)
+                entrada_editada = Entrada(
+                    codigo="",
+                    fecha=datetime.now().strftime("%d/%m/%Y"),
+                    partida=self.entrada.partida,
+                    descripcion=descripcion,
+                    cantidad=cantidad,
+                    unidad=unidad,
+                    proveedor=proveedor,
+                    recibio=recibio,
+                    ubicacion=ubicacion,
+                    observaciones=obs
+                )
+                
+                # Guardar cambio en auditoría (actualiza cantidad)
+                insert_entrada(entrada_editada)
+                
+                # Actualizar entrada en memoria
                 self.entrada.descripcion = descripcion
                 self.entrada.cantidad = cantidad
                 self.entrada.unidad = unidad
@@ -178,25 +200,36 @@ class EntradaDialog(QDialog):
                 self.entrada.recibio = recibio
                 self.entrada.observaciones = obs
 
-                store.update_entrada(self.entrada)
                 bitacora.log("Almacén", f"Producto actualizado: {self.entrada.partida} - {cantidad} {unidad}")
+                event_manager.notify_entrada_add()  # Notificar cambios
                 QMessageBox.information(self, "Éxito", "Producto actualizado correctamente")
             else:
-                # Creación: generar partida automáticamente y crear producto
+                # Creación: generar partida automáticamente y crear entrada auditada
+                from datetime import datetime
+                from app.core.entradas_db import insert_entrada
+                
                 partida = store.generar_codigo_partida()
                 
-                # Crear el nuevo producto
-                nuevo_producto = AlmacenItem(
+                # Crear objeto Entrada para auditoría
+                entrada_auditada = Entrada(
+                    codigo="",
+                    fecha=datetime.now().strftime("%d/%m/%Y"),
                     partida=partida,
                     descripcion=descripcion,
-                    unidad=unidad,
                     cantidad=cantidad,
-                    ubicacion=ubicacion,
+                    unidad=unidad,
                     proveedor=proveedor,
-                    stock_minimo=stock_minimo
+                    recibio=recibio,
+                    ubicacion=ubicacion,
+                    observaciones=obs
                 )
-                store.add_producto(nuevo_producto)
+                
+                # Guardar entrada (esto también guarda el producto en almacén)
+                insert_entrada(entrada_auditada)
+                store.entradas.append(entrada_auditada)
+                
                 bitacora.log("Almacén", f"Entrada registrada: {partida} ({descripcion}) - {cantidad} {unidad} | Proveedor: {proveedor} | Recibió: {recibio}")
+                event_manager.notify_entrada_add()  # Notificar cambios para actualizar dashboard
                 QMessageBox.information(self, "Éxito", f"Producto registrado: {partida}")
 
         except Exception as e:

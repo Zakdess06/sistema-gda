@@ -92,19 +92,27 @@ class Store:
         }
 
     def generar_codigo_herramienta(self) -> str:
-        """Genera un código único para herramienta con formato H-XXX"""
-        herramientas = self.get_herramientas()
-        numeros = []
-        for codigo in herramientas.keys():
-            if codigo.startswith('H-'):
-                try:
-                    num = int(codigo.split('-')[1])
-                    numeros.append(num)
-                except (ValueError, IndexError):
-                    pass
-        
-        siguiente = max(numeros) + 1 if numeros else 1
-        return f"H-{siguiente:03d}"
+        """Genera un código único para herramienta con formato H-XXX.
+
+        Mantiene un contador en memoria para evitar duplicados si se
+        llaman varias veces antes de guardar en la base de datos.
+        """
+        # inicializar contador la primera vez
+        if not hasattr(self, '_herr_counter'):
+            herramientas = self.get_herramientas()
+            numeros = []
+            for codigo in herramientas.keys():
+                if codigo.startswith('H-'):
+                    try:
+                        num = int(codigo.split('-')[1])
+                        numeros.append(num)
+                    except (ValueError, IndexError):
+                        pass
+            self._herr_counter = max(numeros) + 1 if numeros else 1
+
+        codigo = f"H-{self._herr_counter:03d}"
+        self._herr_counter += 1
+        return codigo
 
     def generar_codigo_partida(self) -> str:
         """Genera un código único para partida con formato AAAAMMDD-PROD-XXX"""
@@ -352,7 +360,9 @@ class Store:
             trabajador_despacha_id=trabajador_despacha_id,
             trabajador_recibe_id="",
             fecha_prestamo=datetime.now().strftime("%Y-%m-%d %H:%M"),
-            estado_herramienta_prestamo=estado_herramienta
+            fecha_regreso_estimada=fecha_regreso_estimada,
+            estado_herramienta_prestamo=estado_herramienta,
+            cantidad=cantidad
         )
 
         # Actualizar cantidad en BD

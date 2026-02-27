@@ -8,6 +8,7 @@ from app.core.store import store, Entrada
 from app.core.bitacora import bitacora
 from app.core.event_manager import event_manager
 from app.views.entrada_dialog import EntradaDialog
+from app.utils.table_utils import ajustar_ancho_tabla
 class EntradasView(QWidget):
     def __init__(self):
         super().__init__()
@@ -33,6 +34,14 @@ class EntradasView(QWidget):
             "Partida", "Descripción", "Cantidad", "Unidad",
             "Proveedor", "Ubicación"
         ])
+        ajustar_ancho_tabla(self.table, anchos={
+            0: 160,     # Partida
+            1: 280,     # Descripción
+            2: 80,      # Cantidad
+            3: 70,      # Unidad
+            4: 150,     # Proveedor
+            5: 200      # Ubicación (se estira)
+        })
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         layout.addWidget(self.table)
