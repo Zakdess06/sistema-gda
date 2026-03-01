@@ -5,10 +5,10 @@ from collections import defaultdict
 
 
 def obtener_ultimos_dias(n_dias: int = 7) -> List[str]:
-    """Retorna lista de fechas de los últimos n_días en formato DD/MM"""
+    """Retorna lista de fechas de los últimos n_días en formato DD/MM (incluyendo hoy)"""
     fechas = []
     hoy = datetime.now()
-    for i in range(n_dias, 0, -1):
+    for i in range(n_dias - 1, -1, -1):
         fecha = hoy - timedelta(days=i)
         fechas.append(fecha.strftime("%d/%m"))
     return fechas
@@ -16,7 +16,7 @@ def obtener_ultimos_dias(n_dias: int = 7) -> List[str]:
 
 def procesar_entradas_vs_salidas(entradas, salidas, n_dias: int = 7) -> Tuple[Dict, Dict]:
     """
-    Procesa datos de entradas vs salidas de los últimos n_días
+    Procesa datos de entradas vs salidas de los últimos n_días (incluyendo hoy)
     
     Retorna: (dict_entradas, dict_salidas)
     - Claves: fechas en formato "DD/MM"
@@ -25,7 +25,7 @@ def procesar_entradas_vs_salidas(entradas, salidas, n_dias: int = 7) -> Tuple[Di
     entradas_por_dia = defaultdict(int)
     salidas_por_dia = defaultdict(int)
     
-    fecha_limite = (datetime.now() - timedelta(days=n_dias)).date()
+    fecha_limite = (datetime.now() - timedelta(days=n_dias - 1)).date()
     
     # Procesar entradas (pueden ser Dict o List)
     entradas_list = entradas.values() if isinstance(entradas, dict) else entradas

@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
-from PySide6.QtCore import Qt, QDateTime
+from PySide6.QtCore import Qt, QDateTime, QTimer
 from PySide6.QtGui import QFont
+from datetime import datetime
 import json
 from pathlib import Path
 
@@ -39,9 +40,13 @@ class TopBar(QWidget):
         layout.addStretch()
 
         # ===== INFORMACIÓN DEL USUARIO Y HORA =====
-        # Hora actual
-        tiempo = QDateTime.currentDateTime().toString("dd/MM/yyyy · HH:mm")
-        hora_label = QLabel(tiempo)
+        # Hora actual con actualización en tiempo real
+        self.hora_label = QLabel()
+        self.actualizar_hora()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.actualizar_hora)
+        self.timer.start(1000)  # Actualizar cada segundo
+        hora_label = self.hora_label
         hora_label.setStyleSheet("""
             QLabel {
                 font-size: 12px;
@@ -62,3 +67,20 @@ class TopBar(QWidget):
 
         layout.addWidget(hora_label)
         layout.addWidget(usuario_label)
+
+    def actualizar_hora(self):
+        """Actualiza la hora cada segundo con el formato: LUNES dd/MM/yyyy · HH:mm"""
+        ahora = datetime.now()
+        # Diccionario de días en español
+        dias = {
+            0: "LUNES",
+            1: "MARTES",
+            2: "MIÉRCOLES",
+            3: "JUEVES",
+            4: "VIERNES",
+            5: "SÁBADO",
+            6: "DOMINGO"
+        }
+        dia_nombre = dias[ahora.weekday()]
+        tiempo = ahora.strftime(f"{dia_nombre} %d/%m/%Y · %H:%M")
+        self.hora_label.setText(tiempo)
