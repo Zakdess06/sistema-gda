@@ -1,5 +1,5 @@
 """Módulo para gestionar préstamos en la base de datos"""
-from app.core.database import get_connection
+from app.core.database import get_connection, return_connection
 from app.models.prestamo_herramienta import PrestamoHerramienta
 
 
@@ -32,7 +32,7 @@ def save_prestamo(prestamo: PrestamoHerramienta):
         ))
         
         conn.commit()
-        conn.close()
+        return_connection(conn)
         return True
     except Exception as e:
         print(f"Error guardando préstamo: {e}")
@@ -59,7 +59,7 @@ def update_prestamo(prestamo: PrestamoHerramienta):
         ))
         
         conn.commit()
-        conn.close()
+        return_connection(conn)
         return True
     except Exception as e:
         print(f"Error actualizando préstamo: {e}")
@@ -81,7 +81,7 @@ def fetch_all_prestamos():
         """)
         
         rows = cursor.fetchall()
-        conn.close()
+        return_connection(conn)
         
         prestamos = []
         for row in rows:

@@ -22,6 +22,10 @@ QMainWindow {
     border-bottom: 1px solid #e5e7eb;
 }
 
+#TopBar QLabel {
+    color: #111827;
+}
+
 /* ===== SIDEBAR ===== */
 #Sidebar {
     background-color: #f3f4f6;

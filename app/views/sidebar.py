@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel
 from PySide6.QtCore import Signal, Qt
+from app.core.config import config
 
 
 class Sidebar(QWidget):
@@ -19,15 +20,17 @@ class Sidebar(QWidget):
 
         # ===== TÍTULO =====
         title = QLabel("Sistema GDA")
-        title.setStyleSheet("""
-            QLabel {
+        # Ajustar color segun tema
+        titulo_color = "#111827" if config.theme == "light" else "#f0f4f8"
+        title.setStyleSheet(f"""
+            QLabel {{
                 font-size: 18px;
                 font-weight: 700;
                 padding: 24px 20px;
                 border-bottom: 1px solid #1f2937;
                 letter-spacing: 0.5px;
-                color: #f0f4f8;
-            }
+                color: {titulo_color};
+            }}
         """)
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)

@@ -2,7 +2,7 @@
 # Las entradas ahora se manejan directamente con la tabla productos
 # Una entrada es simplemente agregar un producto al almacén
 
-from app.core.database import get_connection
+from app.core.database import get_connection, return_connection
 from app.core.store import Entrada
 from app.core.proveedor_db import get_or_create_proveedor
 
@@ -18,7 +18,7 @@ def fetch_all_entradas():
             ORDER BY id DESC
         """)
         rows = cursor.fetchall()
-        conn.close()
+        return_connection(conn)
         
         items = []
         for row in rows:
@@ -68,7 +68,7 @@ def insert_entrada(entrada: Entrada):
     ))
     
     conn.commit()
-    conn.close()
+    return_connection(conn)
     
     # También actualizar almacén (producto)
     # Obtener o crear proveedor

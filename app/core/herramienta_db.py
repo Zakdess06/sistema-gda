@@ -1,5 +1,5 @@
 # app/core/herramienta_db.py
-from app.core.database import get_connection
+from app.core.database import get_connection, return_connection
 from app.core.store import Herramienta
 
 def fetch_all_herramientas():
@@ -7,7 +7,7 @@ def fetch_all_herramientas():
     cursor = conn.cursor()
     cursor.execute("SELECT partida, descripcion, ubicacion, cantidad, observaciones FROM herramientas")
     rows = cursor.fetchall()
-    conn.close()
+    return_connection(conn)
     items = []
     for row in rows:
         partida, descripcion, ubicacion, cantidad, observaciones = row
@@ -29,7 +29,7 @@ def insert_herramienta(item: Herramienta):
         (item.codigo, item.descripcion, item.ubicacion, item.cantidad, obs)
     )
     conn.commit()
-    conn.close()
+    return_connection(conn)
 
 def update_herramienta(item: Herramienta):
     conn = get_connection()
@@ -40,11 +40,11 @@ def update_herramienta(item: Herramienta):
         (item.descripcion, item.ubicacion, item.cantidad, obs, item.codigo)
     )
     conn.commit()
-    conn.close()
+    return_connection(conn)
 
 def delete_herramienta(codigo: str):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM herramientas WHERE partida = ?", (codigo,))
     conn.commit()
-    conn.close()
+    return_connection(conn)

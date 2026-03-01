@@ -1,5 +1,5 @@
 # app/core/salidas_db.py
-from app.core.database import get_connection
+from app.core.database import get_connection, return_connection
 from app.core.store import Salida
 
 
@@ -14,7 +14,7 @@ def fetch_all_salidas():
             ORDER BY id DESC
         """)
         rows = cursor.fetchall()
-        conn.close()
+        return_connection(conn)
         
         items = []
         for row in rows:
@@ -59,7 +59,7 @@ def insert_salida(salida: Salida):
         salida.observaciones
     ))
     conn.commit()
-    conn.close()
+    return_connection(conn)
 
 
 def delete_salida(id_salida: int):
@@ -68,4 +68,4 @@ def delete_salida(id_salida: int):
     cursor = conn.cursor()
     cursor.execute("DELETE FROM salidas WHERE id = ?", (id_salida,))
     conn.commit()
-    conn.close()
+    return_connection(conn)

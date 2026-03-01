@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+from app.core.config import config
 
 
 class TrendencyGraphWidget(QWidget):
@@ -19,21 +20,28 @@ class TrendencyGraphWidget(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
         
+        # Definir colores según tema
+        self.is_light_mode = config.theme == "light"
+        self.titulo_color = "#111827" if self.is_light_mode else "#f0f4f8"
+        self.graph_bgcolor = "#ffffff" if self.is_light_mode else "#0a0e11"
+        self.axis_color = "#6b7280" if self.is_light_mode else "#9ca3af"
+        self.grid_color = "#e5e7eb" if self.is_light_mode else "#1f2937"
+        
         # Título
         titulo_label = QLabel(titulo)
-        titulo_label.setStyleSheet("""
-            QLabel {
+        titulo_label.setStyleSheet(f"""
+            QLabel {{
                 font-size: 14px;
                 font-weight: 700;
-                color: #f0f4f8;
+                color: {self.titulo_color};
                 padding: 4px 0px;
-            }
+            }}
         """)
         layout.addWidget(titulo_label)
         
-        # Canvas de matplotlib con fondo oscuro
+        # Canvas de matplotlib con fondo dinámico
         self.figure = Figure(figsize=(8, 2.5), dpi=100)
-        self.figure.patch.set_facecolor('#0a0e11')
+        self.figure.patch.set_facecolor(self.graph_bgcolor)
         self.figure.patch.set_edgecolor('none')
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
@@ -57,15 +65,15 @@ class TrendencyGraphWidget(QWidget):
         
         # Configuración
         ax.set_xticks(x)
-        ax.set_xticklabels(fechas, rotation=45, ha='right', fontsize=8, color='#9ca3af', weight='bold')
-        ax.set_ylabel('Cantidad', fontsize=9, color='#9ca3af', weight='bold')
-        ax.tick_params(colors='#9ca3af', labelsize=8)
-        ax.grid(True, alpha=0.2, color='#1f2937', linestyle='--', linewidth=0.5)
+        ax.set_xticklabels(fechas, rotation=45, ha='right', fontsize=8, color=self.axis_color, weight='bold')
+        ax.set_ylabel('Cantidad', fontsize=9, color=self.axis_color, weight='bold')
+        ax.tick_params(colors=self.axis_color, labelsize=8)
+        ax.grid(True, alpha=0.2, color=self.grid_color, linestyle='--', linewidth=0.5)
         
         # Colores
-        ax.set_facecolor('#0a0e11')
-        ax.spines['bottom'].set_color('#1f2937')
-        ax.spines['left'].set_color('#1f2937')
+        ax.set_facecolor(self.graph_bgcolor)
+        ax.spines['bottom'].set_color(self.grid_color)
+        ax.spines['left'].set_color(self.grid_color)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['bottom'].set_linewidth(1)
@@ -78,10 +86,10 @@ class TrendencyGraphWidget(QWidget):
         ax.set_ylim(-y_max * 0.1, y_max * 1.15)
         
         # Leyenda mejor posicionada
-        legend = ax.legend(loc='upper left', framealpha=0.95, facecolor='#0f1419', 
-                          edgecolor='#1f2937', fontsize=9, frameon=True)
+        legend = ax.legend(loc='upper left', framealpha=0.95, facecolor=self.graph_bgcolor, 
+                          edgecolor=self.grid_color, fontsize=9, frameon=True)
         for text in legend.get_texts():
-            text.set_color('#f0f4f8')
+            text.set_color(self.titulo_color)
             text.set_weight('bold')
         
         self.figure.tight_layout()
@@ -101,21 +109,27 @@ class PieChartWidget(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
         
+        # Definir colores según tema
+        self.is_light_mode = config.theme == "light"
+        self.titulo_color = "#111827" if self.is_light_mode else "#f0f4f8"
+        self.graph_bgcolor = "#ffffff" if self.is_light_mode else "#0a0e11"
+        self.text_color = "#111827" if self.is_light_mode else "#f0f4f8"
+        
         # Título
         titulo_label = QLabel(titulo)
-        titulo_label.setStyleSheet("""
-            QLabel {
+        titulo_label.setStyleSheet(f"""
+            QLabel {{
                 font-size: 14px;
                 font-weight: 700;
-                color: #f0f4f8;
+                color: {self.titulo_color};
                 padding: 4px 0px;
-            }
+            }}
         """)
         layout.addWidget(titulo_label)
         
         # Canvas
         self.figure = Figure(figsize=(4, 2.2), dpi=100)
-        self.figure.patch.set_facecolor('#0a0e11')
+        self.figure.patch.set_facecolor(self.graph_bgcolor)
         self.figure.patch.set_edgecolor('none')
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
@@ -133,19 +147,19 @@ class PieChartWidget(QWidget):
         wedges, texts, autotexts = ax.pie(
             sizes, labels=labels, colors=colors, autopct='%1.1f%%',
             startangle=90, explode=explode,
-            textprops={'color': '#f0f4f8', 'fontsize': 8, 'weight': 'bold'}
+            textprops={'color': self.text_color, 'fontsize': 8, 'weight': 'bold'}
         )
         
-        ax.set_facecolor('#0a0e11')
+        ax.set_facecolor(self.graph_bgcolor)
         
         # Colorear labels y porcentajes
         for text in texts:
-            text.set_color('#f0f4f8')
+            text.set_color(self.text_color)
             text.set_fontsize(8)
             text.set_weight('bold')
         
         for autotext in autotexts:
-            autotext.set_color('#0a0e11')
+            autotext.set_color(self.graph_bgcolor)
             autotext.set_fontsize(8)
             autotext.set_weight('bold')
         
@@ -166,21 +180,28 @@ class BarChartWidget(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
         
+        # Definir colores según tema
+        self.is_light_mode = config.theme == "light"
+        self.titulo_color = "#111827" if self.is_light_mode else "#f0f4f8"
+        self.graph_bgcolor = "#ffffff" if self.is_light_mode else "#0a0e11"
+        self.axis_color = "#6b7280" if self.is_light_mode else "#9ca3af"
+        self.grid_color = "#e5e7eb" if self.is_light_mode else "#1f2937"
+        
         # Título
         titulo_label = QLabel(titulo)
-        titulo_label.setStyleSheet("""
-            QLabel {
+        titulo_label.setStyleSheet(f"""
+            QLabel {{
                 font-size: 14px;
                 font-weight: 700;
-                color: #f0f4f8;
+                color: {self.titulo_color};
                 padding: 4px 0px;
-            }
+            }}
         """)
         layout.addWidget(titulo_label)
         
         # Canvas
         self.figure = Figure(figsize=(8, 2.5), dpi=100)
-        self.figure.patch.set_facecolor('#0a0e11')
+        self.figure.patch.set_facecolor(self.graph_bgcolor)
         self.figure.patch.set_edgecolor('none')
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
@@ -196,9 +217,9 @@ class BarChartWidget(QWidget):
         # Si no hay productos, mostrar gráfico vacío
         if not productos:
             ax.text(0.5, 0.5, 'Sin datos de productos', 
-                   ha='center', va='center', fontsize=10, color='#9ca3af',
+                   ha='center', va='center', fontsize=10, color=self.axis_color,
                    transform=ax.transAxes)
-            ax.set_facecolor('#0a0e11')
+            ax.set_facecolor(self.graph_bgcolor)
             ax.set_xticks([])
             ax.set_yticks([])
             for spine in ax.spines.values():
@@ -220,15 +241,15 @@ class BarChartWidget(QWidget):
         
         # Configuración
         ax.set_yticks(range(len(nombres)))
-        ax.set_yticklabels(nombres, fontsize=9, color='#f0f4f8', weight='bold')
-        ax.set_xlabel('Cantidad', fontsize=9, color='#9ca3af', weight='bold')
-        ax.tick_params(colors='#9ca3af', labelsize=8, axis='x')
-        ax.grid(True, alpha=0.2, axis='x', color='#1f2937', linestyle='--', linewidth=0.5)
+        ax.set_yticklabels(nombres, fontsize=9, color=self.titulo_color, weight='bold')
+        ax.set_xlabel('Cantidad', fontsize=9, color=self.axis_color, weight='bold')
+        ax.tick_params(colors=self.axis_color, labelsize=8, axis='x')
+        ax.grid(True, alpha=0.2, axis='x', color=self.grid_color, linestyle='--', linewidth=0.5)
         
         # Colores
-        ax.set_facecolor('#0a0e11')
-        ax.spines['bottom'].set_color('#1f2937')
-        ax.spines['left'].set_color('#1f2937')
+        ax.set_facecolor(self.graph_bgcolor)
+        ax.spines['bottom'].set_color(self.grid_color)
+        ax.spines['left'].set_color(self.grid_color)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['bottom'].set_linewidth(1)
@@ -239,7 +260,7 @@ class BarChartWidget(QWidget):
             width = bar.get_width()
             ax.text(width + max(cantidades)*0.02, bar.get_y() + bar.get_height()/2,
                    f'{int(cant)}', ha='left', va='center', fontsize=8,
-                   color='#f0f4f8', weight='bold')
+                   color=self.titulo_color, weight='bold')
         
         # Aumentar margen izquierdo para nombres
         self.figure.subplots_adjust(left=0.25, right=0.95)

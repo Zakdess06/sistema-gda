@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from app.core.database import get_connection
+from app.core.database import get_connection, return_connection
 
 
 def fetch_proveedor_by_id(pid: int) -> Optional[Dict]:
@@ -7,7 +7,7 @@ def fetch_proveedor_by_id(pid: int) -> Optional[Dict]:
     cursor = conn.cursor()
     cursor.execute("SELECT id, nombre_comercial, nombre_fiscal, ubicacion, telefono FROM proveedores WHERE id = ?", (pid,))
     row = cursor.fetchone()
-    conn.close()
+    return_connection(conn)
     if not row:
         return None
     id_, nombre_comercial, nombre_fiscal, ubicacion, telefono = row
@@ -25,7 +25,7 @@ def fetch_all_proveedores() -> List[Dict]:
     cursor = conn.cursor()
     cursor.execute("SELECT id, nombre_comercial, nombre_fiscal, ubicacion, telefono FROM proveedores")
     rows = cursor.fetchall()
-    conn.close()
+    return_connection(conn)
     result = []
     for row in rows:
         id_, nombre_comercial, nombre_fiscal, ubicacion, telefono = row
@@ -51,7 +51,7 @@ def get_or_create_proveedor(nombre_comercial: str, ubicacion: str = '', telefono
     row = cursor.fetchone()
     if row:
         pid = row[0]
-        conn.close()
+        return_connection(conn)
         return pid
 
     cursor.execute(
@@ -60,7 +60,7 @@ def get_or_create_proveedor(nombre_comercial: str, ubicacion: str = '', telefono
     )
     conn.commit()
     pid = cursor.lastrowid
-    conn.close()
+    return_connection(conn)
     return pid
 
 def insert_proveedor(nombre_comercial: str, nombre_fiscal: str, ubicacion: str = '', telefono: str = '') -> int:
@@ -73,7 +73,7 @@ def insert_proveedor(nombre_comercial: str, nombre_fiscal: str, ubicacion: str =
     )
     conn.commit()
     pid = cursor.lastrowid
-    conn.close()
+    return_connection(conn)
     return pid
 
 
@@ -86,7 +86,7 @@ def update_proveedor(pid: int, nombre_comercial: str, nombre_fiscal: str, ubicac
         (nombre_comercial, nombre_fiscal, ubicacion, telefono, pid)
     )
     conn.commit()
-    conn.close()
+    return_connection(conn)
 
 
 def delete_proveedor(pid: int):
@@ -95,4 +95,4 @@ def delete_proveedor(pid: int):
     cursor = conn.cursor()
     cursor.execute("DELETE FROM proveedores WHERE id=?", (pid,))
     conn.commit()
-    conn.close()
+    return_connection(conn)
