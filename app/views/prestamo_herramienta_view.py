@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
     QTableWidget, QTableWidgetItem, QPushButton, QMessageBox,
     QComboBox, QLabel, QTextEdit, QSpinBox, QDateTimeEdit,
-    QFrame, QGridLayout
+    QFrame, QGridLayout, QFormLayout, QScrollArea
 )
 from PySide6.QtCore import Qt, QDateTime, QTimer
 from datetime import datetime
@@ -60,122 +60,134 @@ class PrestamoHerramientaView(QWidget):
     # ========== TAB 1: SOLICITAR PRÉSTAMO ==========
     def crear_tab_solicitar(self) -> QWidget:
         """Crea la pestaña para solicitar préstamos"""
-        widget = QWidget()
-        outer_layout = QVBoxLayout(widget)
-        outer_layout.setSpacing(10)
-        outer_layout.setContentsMargins(12, 12, 12, 12)
+        # Widget principal con scroll
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        
+        # Widget interno para el scroll
+        widget_interno = QWidget()
+        main_layout = QVBoxLayout(widget_interno)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(15, 15, 15, 15)
 
-        # título con acento y caja con los campos de solicitud
+        # Título
         title_lbl = QLabel("Solicitud de préstamo")
-        title_lbl.setStyleSheet("font-size:14px; font-weight:700; padding:6px 8px; border-left:4px solid #3a85ff; margin-bottom:6px;")
-        outer_layout.addWidget(title_lbl)
+        title_lbl.setStyleSheet("font-size:15px; font-weight:700; color:#ffffff; margin-bottom:10px;")
+        main_layout.addWidget(title_lbl)
 
-        # formulario simple sin caja decorativa
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(20)
-        grid.setVerticalSpacing(12)
-
-        def crear_linea():
-            line = QFrame()
-            line.setFrameShape(QFrame.HLine)
-            line.setFrameShadow(QFrame.Plain)
-            line.setLineWidth(0)
-            # make separator fully transparent and zero-height
-            line.setFixedHeight(0)
-            line.setStyleSheet("QFrame{background-color:transparent; border:none; margin:0px; padding:0px;}")
-            return line
-
-        # fila 0 - herramienta
-        lbl = QLabel("Herramienta:")
-        lbl.setFixedWidth(160)
-        lbl.setStyleSheet("font-weight:600;")
+        # ===== SECCIÓN 1: HERRAMIENTA =====
+        lbl_sec1 = QLabel("Herramienta")
+        lbl_sec1.setStyleSheet("font-size:12px; font-weight:600; color:#aaaaaa; margin-bottom:8px;")
+        main_layout.addWidget(lbl_sec1)
+        
+        h_layout1 = QHBoxLayout()
+        h_layout1.setSpacing(12)
+        h_layout1.addWidget(QLabel("Herramienta:"))
         self.combo_herramienta = QComboBox()
-        self.combo_herramienta.setMinimumWidth(380)
-        self.combo_herramienta.setMaximumWidth(500)
-        grid.addWidget(lbl, 0, 0)
-        grid.addWidget(self.combo_herramienta, 0, 1, 1, 3)
-        grid.addWidget(crear_linea(), 1, 0, 1, 4)
+        self.combo_herramienta.setMinimumHeight(36)
+        h_layout1.addWidget(self.combo_herramienta, 1)
+        main_layout.addLayout(h_layout1)
+        main_layout.addSpacing(12)
 
-        # fila 2 - ubicación y cantidad
-        lbl_ubi = QLabel("Ubicación:")
-        lbl_ubi.setFixedWidth(160)
-        grid.addWidget(lbl_ubi, 2, 0)
+        # Ubicación y disponible
+        h_layout2 = QHBoxLayout()
+        h_layout2.setSpacing(12)
+        h_layout2.addWidget(QLabel("Ubicación:"))
         self.lbl_ubicacion = QLabel("-")
-        self.lbl_ubicacion.setStyleSheet("color:#dcdcdc;")
-        self.lbl_ubicacion.setObjectName("ValueLabel")
-        grid.addWidget(self.lbl_ubicacion, 2, 1)
-        lbl_cd = QLabel("Cantidad disponible:")
-        lbl_cd.setFixedWidth(160)
-        grid.addWidget(lbl_cd, 2, 2)
+        self.lbl_ubicacion.setMinimumHeight(32)
+        self.lbl_ubicacion.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px;")
+        h_layout2.addWidget(self.lbl_ubicacion, 1)
+        h_layout2.addSpacing(15)
+        h_layout2.addWidget(QLabel("Disponible:"))
         self.lbl_cantidad = QLabel("0")
-        self.lbl_cantidad.setObjectName("ValueLabel")
-        grid.addWidget(self.lbl_cantidad, 2, 3)
-        grid.addWidget(crear_linea(), 3, 0, 1, 4)
+        self.lbl_cantidad.setMinimumHeight(32)
+        self.lbl_cantidad.setMinimumWidth(80)
+        self.lbl_cantidad.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px; text-align:center;")
+        h_layout2.addWidget(self.lbl_cantidad)
+        main_layout.addLayout(h_layout2)
+        main_layout.addSpacing(15)
 
-        # fila 4 - trabajador solicita
-        lbl_sol = QLabel("Trabajador que solicita:")
-        lbl_sol.setFixedWidth(160)
-        grid.addWidget(lbl_sol, 4, 0)
+        # ===== SECCIÓN 2: TRABAJADORES =====
+        lbl_sec2 = QLabel("Trabajadores")
+        lbl_sec2.setStyleSheet("font-size:12px; font-weight:600; color:#aaaaaa; margin-bottom:8px;")
+        main_layout.addWidget(lbl_sec2)
+
+        h_layout3 = QHBoxLayout()
+        h_layout3.setSpacing(12)
+        h_layout3.addWidget(QLabel("Solicita:"))
         self.combo_trabajador_solicita = QComboBox()
-        self.combo_trabajador_solicita.setMinimumWidth(260)
-        self.combo_trabajador_solicita.setMaximumWidth(480)
-        grid.addWidget(self.combo_trabajador_solicita, 4, 1, 1, 3)
-        grid.addWidget(crear_linea(), 5, 0, 1, 4)
+        self.combo_trabajador_solicita.setMinimumHeight(36)
+        h_layout3.addWidget(self.combo_trabajador_solicita, 1)
+        main_layout.addLayout(h_layout3)
+        main_layout.addSpacing(10)
 
-        # fila 6 - trabajador despacha
-        lbl_dep = QLabel("Trabajador que despacha:")
-        lbl_dep.setFixedWidth(160)
-        grid.addWidget(lbl_dep, 6, 0)
+        h_layout4 = QHBoxLayout()
+        h_layout4.setSpacing(12)
+        h_layout4.addWidget(QLabel("Despacha:"))
         self.combo_trabajador_despacha = QComboBox()
-        self.combo_trabajador_despacha.setMinimumWidth(260)
-        self.combo_trabajador_despacha.setMaximumWidth(480)
-        grid.addWidget(self.combo_trabajador_despacha, 6, 1, 1, 3)
-        grid.addWidget(crear_linea(), 7, 0, 1, 4)
+        self.combo_trabajador_despacha.setMinimumHeight(36)
+        h_layout4.addWidget(self.combo_trabajador_despacha, 1)
+        main_layout.addLayout(h_layout4)
+        main_layout.addSpacing(15)
 
-        # fila 8 - estado herramienta
-        lbl_est = QLabel("Estado de la herramienta:")
-        lbl_est.setFixedWidth(160)
-        grid.addWidget(lbl_est, 8, 0)
+        # ===== SECCIÓN 3: DETALLES DEL PRÉSTAMO =====
+        lbl_sec3 = QLabel("Detalles del Préstamo")
+        lbl_sec3.setStyleSheet("font-size:12px; font-weight:600; color:#aaaaaa; margin-bottom:8px;")
+        main_layout.addWidget(lbl_sec3)
+
+        h_layout5 = QHBoxLayout()
+        h_layout5.setSpacing(12)
+        h_layout5.addWidget(QLabel("Estado:"))
         self.combo_estado_prestamo = QComboBox()
         self.combo_estado_prestamo.addItems(["Bueno", "Regular", "Dañado"])
-        grid.addWidget(self.combo_estado_prestamo, 8, 1)
-        grid.addWidget(crear_linea(), 9, 0, 1, 4)
+        self.combo_estado_prestamo.setMinimumHeight(36)
+        h_layout5.addWidget(self.combo_estado_prestamo, 1)
+        main_layout.addLayout(h_layout5)
+        main_layout.addSpacing(10)
 
-        # fila 10 - fecha regreso estimada
-        lbl_fecha = QLabel("Fecha de regreso estimada:")
-        lbl_fecha.setFixedWidth(160)
-        grid.addWidget(lbl_fecha, 10, 0)
+        h_layout6 = QHBoxLayout()
+        h_layout6.setSpacing(12)
+        h_layout6.addWidget(QLabel("Fecha regreso:"))
         self.date_regreso_estimada = QDateTimeEdit()
         self.date_regreso_estimada.setDateTime(QDateTime.currentDateTime())
         self.date_regreso_estimada.setDisplayFormat("yyyy-MM-dd HH:mm")
-        grid.addWidget(self.date_regreso_estimada, 10, 1, 1, 3)
-        grid.addWidget(crear_linea(), 11, 0, 1, 4)
+        self.date_regreso_estimada.setMinimumHeight(36)
+        h_layout6.addWidget(self.date_regreso_estimada, 1)
+        main_layout.addLayout(h_layout6)
+        main_layout.addSpacing(10)
 
-        # fila 12 - cantidad a prestar
-        lbl_cant = QLabel("Cantidad a prestar:")
-        lbl_cant.setFixedWidth(160)
-        grid.addWidget(lbl_cant, 12, 0)
+        h_layout7 = QHBoxLayout()
+        h_layout7.setSpacing(12)
+        h_layout7.addWidget(QLabel("Cantidad:"))
         self.spin_cantidad_prestamo = QSpinBox()
         self.spin_cantidad_prestamo.setRange(1, 999999)
         self.spin_cantidad_prestamo.setValue(1)
-        self.spin_cantidad_prestamo.setMaximumWidth(100)
-        grid.addWidget(self.spin_cantidad_prestamo, 12, 1)
+        self.spin_cantidad_prestamo.setMinimumHeight(36)
+        self.spin_cantidad_prestamo.setMaximumWidth(120)
+        h_layout7.addWidget(self.spin_cantidad_prestamo)
+        h_layout7.addStretch()
+        main_layout.addLayout(h_layout7)
+        main_layout.addSpacing(12)
 
-        # botón dentro del formulario
+        # Botón
         self.btn_solicitar = QPushButton("Crear Préstamo")
-        self.btn_solicitar.setMinimumHeight(36)
+        self.btn_solicitar.setMinimumHeight(38)
+        self.btn_solicitar.setMaximumWidth(200)
+        self.btn_solicitar.setStyleSheet("font-weight:600; font-size:12px;")
         self.btn_solicitar.clicked.connect(self.solicitar_prestamo)
-        grid.addWidget(self.btn_solicitar, 13, 0, 1, 2)
+        main_layout.addWidget(self.btn_solicitar)
+        main_layout.addSpacing(10)
 
-        outer_layout.addLayout(grid)
-        outer_layout.addSpacing(20)
-
-        # tabla de préstamos activos
-        outer_layout.addWidget(QLabel("Préstamos activos:"))
+        # Tabla de préstamos activos
+        table_title = QLabel("Préstamos activos:")
+        table_title.setStyleSheet("font-weight:600; font-size:12px; color:#aaaaaa; margin-bottom:12px;")
+        main_layout.addWidget(table_title)
+        
         self.table_activos = QTableWidget(0, 6)
         self.table_activos.setHorizontalHeaderLabels([
             "ID", "Herramienta", "Solicita", "Despacha", "Fecha", "Estado"
         ])
+        self.table_activos.setMinimumHeight(200)
         ajustar_ancho_tabla(self.table_activos, anchos={
             0: 120,  # ID
             1: 180,  # Herramienta
@@ -185,191 +197,161 @@ class PrestamoHerramientaView(QWidget):
             5: 100   # Estado (se estira)
         })
         self.table_activos.setEditTriggers(QTableWidget.NoEditTriggers)
-        outer_layout.addWidget(self.table_activos)
+        main_layout.addWidget(self.table_activos)
 
-        # conectar cambios
+        # Conexiones
         self.combo_herramienta.currentIndexChanged.connect(self.actualizar_detalles_herramienta)
         self.combo_trabajador_solicita.currentIndexChanged.connect(self.on_trabajador_solicita_changed)
         self.combo_trabajador_despacha.currentIndexChanged.connect(self.on_trabajador_despacha_changed)
 
-        return widget
+        # Agregar widget interno al scroll
+        main_layout.addStretch()
+        scroll.setWidget(widget_interno)
+        return scroll
 
     # ========== TAB 2: REGISTRAR DEVOLUCIÓN ==========
     def crear_tab_devolver(self) -> QWidget:
         """Crea la pestaña para registrar devoluciones"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
+        # Widget principal con scroll
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        
+        # Widget interno para el scroll
+        widget_interno = QWidget()
+        main_layout = QVBoxLayout(widget_interno)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(15, 15, 15, 15)
 
-        # Seleccionar préstamo
+        # Título
+        title_lbl = QLabel("Registrar Devolución")
+        title_lbl.setStyleSheet("font-size:15px; font-weight:700; color:#ffffff; margin-bottom:10px;")
+        main_layout.addWidget(title_lbl)
+
+        # ===== SECCIÓN 1: SELECCIONAR PRÉSTAMO =====
+        lbl_sec1 = QLabel("Seleccionar Préstamo")
+        lbl_sec1.setStyleSheet("font-size:12px; font-weight:600; color:#aaaaaa; margin-bottom:8px;")
+        main_layout.addWidget(lbl_sec1)
+
         h_layout1 = QHBoxLayout()
-        h_layout1.addWidget(QLabel("Préstamo a devolver:"))
+        h_layout1.setSpacing(12)
+        h_layout1.addWidget(QLabel("Préstamo:"))
         self.combo_prestamo_devolver = QComboBox()
-        self.combo_prestamo_devolver.setMinimumWidth(520)
-        h_layout1.addWidget(self.combo_prestamo_devolver)
-        h_layout1.addStretch()
-        layout.addLayout(h_layout1)
+        self.combo_prestamo_devolver.setMinimumHeight(36)
+        h_layout1.addWidget(self.combo_prestamo_devolver, 1)
+        main_layout.addLayout(h_layout1)
+        main_layout.addSpacing(15)
 
-        # Detalles del préstamo: usar grid y agrupar en una caja para mejor alineación
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(14)
-        grid.setVerticalSpacing(-1)
+        # ===== SECCIÓN 2: DETALLES DEL PRÉSTAMO =====
+        lbl_sec2 = QLabel("Detalles del Préstamo")
+        lbl_sec2.setStyleSheet("font-size:12px; font-weight:600; color:#aaaaaa; margin-bottom:8px;")
+        main_layout.addWidget(lbl_sec2)
 
-        # Función auxiliar para crear línea separadora horizontal (blanca brillante)
-        def crear_linea_horizontal():
-            line = QFrame()
-            line.setFrameShape(QFrame.HLine)
-            line.setFrameShadow(QFrame.Plain)
-            line.setLineWidth(1)
-            # make separator invisible to remove harsh lines from layout
-            line.setFixedHeight(0)
-            line.setStyleSheet("QFrame{background-color:transparent; border:none; margin:0px; padding:0px;}")
-            return line
-
-        # Fila 0
-        lbl_herr = QLabel("Herramienta:")
-        lbl_herr.setFixedWidth(140)
-        lbl_herr.setStyleSheet("font-weight:600;")
+        # Herramienta y Estado
+        h_layout2 = QHBoxLayout()
+        h_layout2.setSpacing(12)
+        h_layout2.addWidget(QLabel("Herramienta:"))
         self.lbl_herr_devolver = QLabel("-")
-        self.lbl_herr_devolver.setStyleSheet("color: #dcdcdc;")
-        self.lbl_herr_devolver.setObjectName("ValueLabel")
-
-        lbl_estado = QLabel("Estado al prestar:")
-        lbl_estado.setFixedWidth(140)
-        lbl_estado.setStyleSheet("font-weight:600;")
+        self.lbl_herr_devolver.setMinimumHeight(32)
+        self.lbl_herr_devolver.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px;")
+        h_layout2.addWidget(self.lbl_herr_devolver, 1)
+        h_layout2.addSpacing(15)
+        h_layout2.addWidget(QLabel("Estado al prestar:"))
         self.lbl_estado_prestamo = QLabel("-")
-        self.lbl_estado_prestamo.setStyleSheet("color: #dcdcdc;")
-        self.lbl_estado_prestamo.setObjectName("ValueLabel")
+        self.lbl_estado_prestamo.setMinimumHeight(32)
+        self.lbl_estado_prestamo.setMinimumWidth(100)
+        self.lbl_estado_prestamo.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px; text-align:center;")
+        h_layout2.addWidget(self.lbl_estado_prestamo)
+        main_layout.addLayout(h_layout2)
+        main_layout.addSpacing(10)
 
-        grid.addWidget(lbl_herr, 0, 0, Qt.AlignLeft)
-        grid.addWidget(self.lbl_herr_devolver, 0, 1)
-        grid.addWidget(lbl_estado, 0, 2, Qt.AlignLeft)
-        grid.addWidget(self.lbl_estado_prestamo, 0, 3)
-
-        # Línea horizontal separadora después de fila 0
-        for col in range(4):
-            grid.addWidget(crear_linea_horizontal(), 1, col)
-
-        # Fila 1 (ajustada a índice 2 por la línea anterior)
-        lbl_sol = QLabel("Solicitó:")
-        lbl_sol.setFixedWidth(140)
-        lbl_sol.setStyleSheet("font-weight:600;")
+        # Solicitó y Despachó
+        h_layout3 = QHBoxLayout()
+        h_layout3.setSpacing(12)
+        h_layout3.addWidget(QLabel("Solicitó:"))
         self.lbl_solicita_devolver = QLabel("-")
-        self.lbl_solicita_devolver.setStyleSheet("color: #dcdcdc;")
-        self.lbl_solicita_devolver.setObjectName("ValueLabel")
-
-        lbl_desp = QLabel("Despachó:")
-        lbl_desp.setFixedWidth(140)
-        lbl_desp.setStyleSheet("font-weight:600;")
+        self.lbl_solicita_devolver.setMinimumHeight(32)
+        self.lbl_solicita_devolver.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px;")
+        h_layout3.addWidget(self.lbl_solicita_devolver, 1)
+        h_layout3.addSpacing(15)
+        h_layout3.addWidget(QLabel("Despachó:"))
         self.lbl_despacha_devolver = QLabel("-")
-        self.lbl_despacha_devolver.setStyleSheet("color: #dcdcdc;")
-        self.lbl_despacha_devolver.setObjectName("ValueLabel")
+        self.lbl_despacha_devolver.setMinimumHeight(32)
+        self.lbl_despacha_devolver.setMinimumWidth(100)
+        self.lbl_despacha_devolver.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px;")
+        h_layout3.addWidget(self.lbl_despacha_devolver)
+        main_layout.addLayout(h_layout3)
+        main_layout.addSpacing(10)
 
-        grid.addWidget(lbl_sol, 2, 0, Qt.AlignLeft)
-        grid.addWidget(self.lbl_solicita_devolver, 2, 1)
-        grid.addWidget(lbl_desp, 2, 2, Qt.AlignLeft)
-        grid.addWidget(self.lbl_despacha_devolver, 2, 3)
-
-        # Línea horizontal separadora después de fila 1
-        for col in range(4):
-            grid.addWidget(crear_linea_horizontal(), 3, col)
-
-        # Fila 2 (ajustada a índice 4 por la línea anterior)
-        lbl_fecha = QLabel("Fecha de préstamo:")
-        lbl_fecha.setFixedWidth(140)
-        lbl_fecha.setStyleSheet("font-weight:600;")
+        # Fechas
+        h_layout4 = QHBoxLayout()
+        h_layout4.setSpacing(12)
+        h_layout4.addWidget(QLabel("Fecha de préstamo:"))
         self.lbl_fecha_prestamo = QLabel("-")
-        self.lbl_fecha_prestamo.setStyleSheet("color: #dcdcdc;")
-        self.lbl_fecha_prestamo.setObjectName("ValueLabel")
-
-        lbl_regreso = QLabel("Fecha de regreso estimada:")
-        lbl_regreso.setFixedWidth(140)
-        lbl_regreso.setStyleSheet("font-weight:600;")
+        self.lbl_fecha_prestamo.setMinimumHeight(32)
+        self.lbl_fecha_prestamo.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px;")
+        h_layout4.addWidget(self.lbl_fecha_prestamo, 1)
+        h_layout4.addSpacing(15)
+        h_layout4.addWidget(QLabel("Regreso estimado:"))
         self.lbl_fecha_regreso_estimada = QLabel("-")
-        self.lbl_fecha_regreso_estimada.setStyleSheet("color: #dcdcdc;")
-        self.lbl_fecha_regreso_estimada.setObjectName("ValueLabel")
+        self.lbl_fecha_regreso_estimada.setMinimumHeight(32)
+        self.lbl_fecha_regreso_estimada.setMinimumWidth(130)
+        self.lbl_fecha_regreso_estimada.setStyleSheet("padding:6px; background-color:#1a1a1a; border-radius:4px;")
+        h_layout4.addWidget(self.lbl_fecha_regreso_estimada)
+        main_layout.addLayout(h_layout4)
+        main_layout.addSpacing(15)
 
-        grid.addWidget(lbl_fecha, 4, 0, Qt.AlignLeft)
-        grid.addWidget(self.lbl_fecha_prestamo, 4, 1)
-        grid.addWidget(lbl_regreso, 4, 2, Qt.AlignLeft)
-        grid.addWidget(self.lbl_fecha_regreso_estimada, 4, 3)
-
-        # Agrupar en caja con bordes suaves
-        from PySide6.QtWidgets import QGroupBox
-        box = QGroupBox()
-        box.setObjectName("Card")
-        box.setLayout(grid)
-        box.setStyleSheet("QGroupBox{border:1px solid #2f2f2f; border-radius:6px; margin-top:6px; padding:10px;} QGroupBox::title{subcontrol-origin:margin; left:10px;}" )
-        # Título con acento a la izquierda
-        title_lbl = QLabel("Detalles del préstamo")
-        title_lbl.setStyleSheet("font-size:14px; font-weight:700; padding:6px 8px; border-left:4px solid #3a85ff; margin-bottom:6px;")
-        layout.addWidget(title_lbl)
-        layout.addWidget(box)
-
-        # línea divisoria pequeña
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
-        line.setFixedHeight(6)
-        layout.addWidget(line)
-
-        # Agrupar campos de devolución en una caja separada
-        gbox_dev = QGroupBox("Devolución")
-        gbox_dev.setObjectName("Card")
-        gbox_dev_layout = QVBoxLayout()
+        # ===== SECCIÓN 3: DEVOLUCIÓN =====
+        lbl_sec3 = QLabel("Información de Devolución")
+        lbl_sec3.setStyleSheet("font-size:12px; font-weight:600; color:#aaaaaa; margin-bottom:8px;")
+        main_layout.addWidget(lbl_sec3)
 
         # Trabajador que recibe
-        h_layout2 = QHBoxLayout()
-        lbl_recibe = QLabel("Trabajador que recibe:")
-        lbl_recibe.setFixedWidth(160)
+        h_layout5 = QHBoxLayout()
+        h_layout5.setSpacing(12)
+        h_layout5.addWidget(QLabel("Trabajador que recibe:"))
         self.combo_trabajador_recibe = QComboBox()
-        self.combo_trabajador_recibe.setMaximumWidth(420)
-        h_layout2.addWidget(lbl_recibe)
-        h_layout2.addWidget(self.combo_trabajador_recibe)
-        h_layout2.addStretch()
-        gbox_dev_layout.addLayout(h_layout2)
+        self.combo_trabajador_recibe.setMinimumHeight(36)
+        h_layout5.addWidget(self.combo_trabajador_recibe, 1)
+        main_layout.addLayout(h_layout5)
+        main_layout.addSpacing(10)
 
         # Estado de devolución
-        h_layout3 = QHBoxLayout()
-        lbl_estado = QLabel("Estado de devolución:")
-        lbl_estado.setFixedWidth(160)
+        h_layout6 = QHBoxLayout()
+        h_layout6.setSpacing(12)
+        h_layout6.addWidget(QLabel("Estado de devolución:"))
         self.combo_estado_devolucion = QComboBox()
         self.combo_estado_devolucion.addItems(["Bueno", "Regular", "Dañado"])
-        self.combo_estado_devolucion.setMaximumWidth(220)
-        h_layout3.addWidget(lbl_estado)
-        h_layout3.addWidget(self.combo_estado_devolucion)
-        h_layout3.addStretch()
-        gbox_dev_layout.addLayout(h_layout3)
+        self.combo_estado_devolucion.setMinimumHeight(36)
+        h_layout6.addWidget(self.combo_estado_devolucion, 1)
+        main_layout.addLayout(h_layout6)
+        main_layout.addSpacing(10)
 
-        # Comentarios con marco
+        # Comentarios
         lbl_com = QLabel("Comentarios:")
-        gbox_dev_layout.addWidget(lbl_com)
-        comment_frame = QFrame()
-        comment_frame.setStyleSheet("QFrame{border:1px solid #2f2f2f; border-radius:6px; background: #111111;}")
-        comment_layout = QVBoxLayout(comment_frame)
+        lbl_com.setStyleSheet("font-size:11px; color:#cccccc;")
+        main_layout.addWidget(lbl_com)
+        
         self.txt_comentarios = QTextEdit()
         self.txt_comentarios.setMinimumHeight(100)
-        self.txt_comentarios.setStyleSheet("QTextEdit{background:transparent;}")
-        comment_layout.addWidget(self.txt_comentarios)
-        gbox_dev_layout.addWidget(comment_frame)
+        self.txt_comentarios.setStyleSheet("QTextEdit{padding:6px; background-color:#1a1a1a; border-radius:4px;}")
+        main_layout.addWidget(self.txt_comentarios)
+        main_layout.addSpacing(12)
 
-        # Botón alineado a la derecha dentro de la caja
-        h_layout_btn = QHBoxLayout()
-        h_layout_btn.addStretch()
+        # Botón
         self.btn_devolver = QPushButton("Registrar Devolución")
-        self.btn_devolver.setObjectName("PrimaryButton")
+        self.btn_devolver.setMinimumHeight(38)
+        self.btn_devolver.setMaximumWidth(200)
+        self.btn_devolver.setStyleSheet("font-weight:600; font-size:12px;")
         self.btn_devolver.clicked.connect(self.registrar_devolucion)
-        self.btn_devolver.setMinimumWidth(160)
-        h_layout_btn.addWidget(self.btn_devolver)
-        gbox_dev_layout.addLayout(h_layout_btn)
+        main_layout.addWidget(self.btn_devolver)
 
-        gbox_dev.setLayout(gbox_dev_layout)
-        gbox_dev.setStyleSheet("QGroupBox{border:1px solid #2f2f2f; border-radius:6px; padding:10px; margin-top:8px;} QGroupBox:title{subcontrol-origin:margin; left:10px; font-weight:700;}" )
-        layout.addWidget(gbox_dev)
+        main_layout.addStretch()
 
-        # Conectar cambios
+        # Conexión
         self.combo_prestamo_devolver.currentIndexChanged.connect(self.actualizar_detalles_prestamo)
 
-        return widget
+        scroll.setWidget(widget_interno)
+        return scroll
 
     # ========== TAB 3: HISTORIAL ==========
     def crear_tab_historial(self) -> QWidget:

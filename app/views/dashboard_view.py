@@ -33,6 +33,7 @@ class StatCard(QFrame):
         # Estilos base
         self.setMinimumHeight(90)
         self.setMaximumHeight(110)
+        self.setMinimumWidth(200)
         self.setCursor(Qt.PointingHandCursor)
         
         # Aplicar estilo según tipo
@@ -57,6 +58,7 @@ class StatCard(QFrame):
         self.lbl_valor = QLabel(str(valor))
         self.lbl_valor.setObjectName("StatCardValue")
         self.lbl_valor.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.lbl_valor.setMinimumWidth(80)
         self.lbl_valor.setStyleSheet(
             "QLabel { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }"
         )
