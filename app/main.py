@@ -37,10 +37,6 @@ def main():
     
     app = QApplication(sys.argv)
     
-    # Desactivar escalado automático de Qt
-    app.setAttribute(Qt.AA_EnableHighDpiScaling, False)
-    app.setAttribute(Qt.AA_Use96Dpi, True)
-    
     # Forzar una fuente base con tamaño válido usando pixels
     base_font = QFont()
     base_font.setPixelSize(11)

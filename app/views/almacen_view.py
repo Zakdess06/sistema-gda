@@ -110,7 +110,7 @@ class AlmacenView(QWidget):
         if selected < 0:
             QMessageBox.warning(self, "Error", "Seleccione un producto para hacer restock")
             return
-        partida = self.table.item(selected, 1).text()
+        partida = self.table.item(selected, 2).text()  # Columna 2 es la partida
         almacen = store.get_almacen()
         producto = almacen.get(partida)
         if not producto:

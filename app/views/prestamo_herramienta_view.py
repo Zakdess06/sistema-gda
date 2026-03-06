@@ -398,6 +398,7 @@ class PrestamoHerramientaView(QWidget):
         self.actualizar_combos_herramientas()
         self.actualizar_combos_trabajadores()
         # Aplicar filtros de exclusión mutua después de cargar trabajadores
+        self.actualizar_combo_despacha()
         self.actualizar_combo_solicita()
         self.cargar_prestamos_activos()
         self.actualizar_combos_prestamos()
@@ -466,8 +467,6 @@ class PrestamoHerramientaView(QWidget):
             self.combo_trabajador_despacha.setCurrentIndex(0)
         
         self.combo_trabajador_despacha.blockSignals(False)
-        # Actualizar solicita en respuesta
-        self.actualizar_combo_solicita()
 
     def actualizar_combo_solicita(self):
         """Actualiza el combo de solicita excluyendo al trabajador que despacha"""
@@ -511,15 +510,19 @@ class PrestamoHerramientaView(QWidget):
 
         prestamos = self.controller.listar_prestamos_activos()
         for i, p in enumerate(prestamos):
-            row = self.combo_prestamo_devolver.rowCount()
-            self.combo_prestamo_devolver.insertRow(row)
-            self.combo_prestamo_devolver.setItem(row, 0, QTableWidgetItem(str(p.id_prestamo)))  # ID
-            self.combo_prestamo_devolver.setItem(row, 1, QTableWidgetItem(p.codigo_herramienta))
-            self.combo_prestamo_devolver.setItem(row, 2, QTableWidgetItem(p.nombre_herramienta))
-            self.combo_prestamo_devolver.setItem(row, 3, QTableWidgetItem(p.nombre_trabajador))
-            self.combo_prestamo_devolver.setItem(row, 4, QTableWidgetItem(p.fecha_prestamo))
-            self.combo_prestamo_devolver.setItem(row, 5, QTableWidgetItem(p.fecha_devolucion or ""))
-            self.combo_prestamo_devolver.setItem(row, 6, QTableWidgetItem(p.estado))
+            # Obtener datos relacionados
+            herramientas = store.get_herramientas()
+            herramienta = herramientas.get(p.herramienta_codigo, None)
+            nombre_herramienta = herramienta.descripcion if herramienta else p.herramienta_codigo
+            
+            trabajador = store.trabajadores.get(p.trabajador_solicita_id, None)
+            nombre_trabajador = trabajador.nombre if trabajador else p.trabajador_solicita_id
+            
+            # Crear texto descriptivo para el combo
+            display_text = f"{p.id} - {nombre_herramienta} ({nombre_trabajador})"
+            
+            # Agregar item al combo con el ID como userData
+            self.combo_prestamo_devolver.addItem(display_text, p.id)
 
         self.combo_prestamo_devolver.blockSignals(False)
         self.actualizar_detalles_prestamo()
@@ -562,7 +565,8 @@ class PrestamoHerramientaView(QWidget):
             self.limpiar_detalles_prestamo()
             return
 
-        herr = store.herramientas.get(prestamo.herramienta_codigo)
+        herramientas = store.get_herramientas()
+        herr = herramientas.get(prestamo.herramienta_codigo)
         herr_desc = herr.descripcion if herr else prestamo.herramienta_codigo
 
         trab_solicita = store.trabajadores.get(prestamo.trabajador_solicita_id)
@@ -597,10 +601,19 @@ class PrestamoHerramientaView(QWidget):
         for i, p in enumerate(prestamos):
             row = self.table_activos.rowCount()
             self.table_activos.insertRow(row)
-            self.table_activos.setItem(row, 0, QTableWidgetItem(str(p.id_prestamo)))  # ID
-            self.table_activos.setItem(row, 1, QTableWidgetItem(p.codigo_herramienta))
-            self.table_activos.setItem(row, 2, QTableWidgetItem(p.nombre_herramienta))
-            self.table_activos.setItem(row, 3, QTableWidgetItem(p.nombre_trabajador))
+            
+            # Obtener datos relacionados
+            herramientas = store.get_herramientas()
+            herramienta = herramientas.get(p.herramienta_codigo, None)
+            nombre_herramienta = herramienta.descripcion if herramienta else p.herramienta_codigo
+            
+            trabajador = store.trabajadores.get(p.trabajador_solicita_id, None)
+            nombre_trabajador = trabajador.nombre if trabajador else p.trabajador_solicita_id
+            
+            self.table_activos.setItem(row, 0, QTableWidgetItem(str(p.id)))  # ID
+            self.table_activos.setItem(row, 1, QTableWidgetItem(p.herramienta_codigo))
+            self.table_activos.setItem(row, 2, QTableWidgetItem(nombre_herramienta))
+            self.table_activos.setItem(row, 3, QTableWidgetItem(nombre_trabajador))
             self.table_activos.setItem(row, 4, QTableWidgetItem(p.fecha_prestamo))
             self.table_activos.setItem(row, 5, QTableWidgetItem(p.fecha_devolucion or ""))
             self.table_activos.setItem(row, 6, QTableWidgetItem(p.estado))
@@ -608,8 +621,8 @@ class PrestamoHerramientaView(QWidget):
             # resaltar si está vencido
             try:
                 from app.controllers.prestamo_herramienta_controller import PrestamoHerramientaController
-                vencidos = [p.id for p in PrestamoHerramientaController.listar_prestamos_vencidos()]
-                if p.id_prestamo in vencidos:
+                vencidos = [v.id for v in PrestamoHerramientaController.listar_prestamos_vencidos()]
+                if p.id in vencidos:
                     for col in range(self.table_activos.columnCount()):
                         it = self.table_activos.item(row, col)
                         if it:
@@ -646,8 +659,9 @@ class PrestamoHerramientaView(QWidget):
             self.table_historial.setItem(row, 3, QTableWidgetItem(trab_despacha.nombre if trab_despacha else "-"))
             self.table_historial.setItem(row, 4, QTableWidgetItem(trab_recibe.nombre if trab_recibe else "-"))
             self.table_historial.setItem(row, 5, QTableWidgetItem(prestamo.fecha_prestamo))
-            self.table_historial.setItem(row, 6, QTableWidgetItem(prestamo.fecha_devolucion or "-"))
-            self.table_historial.setItem(row, 7, QTableWidgetItem(prestamo.estado_herramienta_prestamo))
+            self.table_historial.setItem(row, 6, QTableWidgetItem(prestamo.fecha_regreso_estimada or "-"))
+            self.table_historial.setItem(row, 7, QTableWidgetItem(prestamo.fecha_devolucion or "-"))
+            self.table_historial.setItem(row, 8, QTableWidgetItem(prestamo.estado_herramienta_prestamo))
 
     # ========== ACCIONES ==========
     def solicitar_prestamo(self):

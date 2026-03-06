@@ -83,8 +83,8 @@ def seed_demo():
         ('Carretilla', 'Almacén A', 2, 'Disponible'),
     ]
     
-    for desc, ubicacion, cantidad, estado in herramientas_data:
-        codigo = store.generar_codigo_herramienta()
+    for i, (desc, ubicacion, cantidad, estado) in enumerate(herramientas_data, 1):
+        codigo = f"H-{i:03d}"  # H-001, H-002, etc.
         herramienta = Herramienta(
             codigo=codigo,
             descripcion=desc,
@@ -109,11 +109,21 @@ def seed_demo():
         ('Vidrio templado 4mm', 'Pza', 40, 'VidrioPerfecto', 'Elena Sánchez', 'Almacén A', 6, 'Frágil - manipular con cuidado'),
         ('Alambre recocido', 'Kg', 250, 'ClavosYTuercas', 'Fernando Gutiérrez', 'Estante B4', 10, ''),
         ('Cinta adhesiva industrial', 'Rollo', 30, 'MaterialesPremium', 'Valentina Castillo', 'Estante C2', 5, 'Varias medidas'),
+        # Entradas adicionales para demostración de gráficas
+        ('Tornillos #8', 'Kg', 25, 'ClavosYTuercas', 'Juan Pérez', 'Estante F1', 5, 'Lote A'),
+        ('Tuercas asortidas', 'Kg', 15, 'MetalPro', 'María López', 'Estante F2', 3, 'Variedad'),
+        ('Pintura acrílica', 'Lt', 80, 'VerdeMas', 'Carlos Ruiz', 'Bodega 1', 10, 'Colores'),
+        ('Mezcla para concreto', 'Pza', 60, 'ConstruMundo', 'Ana García', 'Patio exterior', 12, 'Preparado'),
+        ('Masilla blanca', 'Kg', 40, 'MaterialesPremium', 'Roberto Díaz', 'Estante G1', 8, 'Multiusos'),
+        ('Clavos 2.5"', 'Kg', 35, 'ClavosYTuercas', 'Patricia Martínez', 'Estante F3', 7, 'Acero'),
+        ('Sello plástico', 'Rollo', 20, 'ObraExpress', 'Diego Fernández', 'Estante H1', 4, 'Para grietas'),
+        ('Pegamento epóxico', 'Lt', 25, 'MaterialesPremium', 'Sofía Ramírez', 'Estante G2', 6, 'Dos componentes'),
+        ('Piedra pómez', 'Kg', 45, 'ConstruMundo', 'Miguel Rodríguez', 'Estante I1', 9, 'Granulada'),
     ]
     
     hoy = datetime.now()
     for i, (desc, unidad, cant, prov, recibio, ubicacion, stock_min, obs) in enumerate(entradas_data):
-        # Distribuir en los últimos 7 días
+        # Distribuir en los últimos 7 días con patrón: más en inicio de semana
         dias_atras = i % 7
         fecha = hoy - timedelta(days=dias_atras)
         fecha_str = fecha.strftime("%d/%m/%Y")
@@ -148,12 +158,26 @@ def seed_demo():
         ('Alambre recocido', 'Kg', 50, 'Obra Centro Comercial', 'Despacho'),
         ('Cinta adhesiva industrial', 'Rollo', 5, 'Mantenimiento', 'Uso interno'),
         ('Ladrillo rojo', 'Pza', 80, 'Proyecto Hospital', 'Despacho'),
+        # Salidas adicionales para ver variaciones en la gráfica
+        ('Tornillos #8', 'Kg', 8, 'Reparaciones varias', 'Despacho'),
+        ('Tuercas asortidas', 'Kg', 5, 'Mantenimiento', 'Uso interno'),
+        ('Pintura acrílica', 'Lt', 15, 'Proyecto Oficinas', 'Despacho'),
+        ('Mezcla para concreto', 'Pza', 20, 'Obra Centro Comercial', 'Despacho'),
+        ('Masilla blanca', 'Kg', 12, 'Reforma Baños', 'Despacho'),
+        ('Clavos 2.5"', 'Kg', 18, 'Constructora ABC', 'Despacho'),
+        ('Sello plástico', 'Rollo', 3, 'Mantenimiento', 'Uso interno'),
+        ('Pegamento epóxico', 'Lt', 7, 'Proyecto Hospital', 'Despacho'),
+        ('Piedra pómez', 'Kg', 22, 'Obra Centro Comercial', 'Despacho'),
+        ('Varilla 1/2"', 'Mt', 40, 'Constructora ABC', 'Despacho'),
+        ('Tubo PVC', 'Mt', 30, 'Reparaciones varias', 'Despacho'),
+        ('Ladrillo rojo', 'Pza', 100, 'Reforma Baños', 'Despacho'),
+        ('Cemento Portland 50kg', 'Pza', 25, 'Proyecto Oficinas', 'Despacho'),
     ]
     
     for i, (desc, unidad, cant, proyecto, destino) in enumerate(salidas_data):
-        dias_atras = (i // 2) % 7
+        dias_atras = (i // 3) % 7  # 3 salidas por día aprox
         fecha = hoy - timedelta(days=dias_atras)
-        fecha_str = fecha.strftime("%d/%m/%Y")
+        fecha_str = fecha.strftime("%Y-%m-%d %H:%M")
         
         salida = Salida(
             fecha=fecha_str,

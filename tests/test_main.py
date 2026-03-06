@@ -92,7 +92,7 @@ class TestRespaldo(unittest.TestCase):
         init_database()
         from app.core.database import DB_PATH
         import os, shutil
-        backup_dir = os.path.join(os.path.dirname(DB_PATH), 'backups')
+        backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), 'backups')
         if os.path.exists(backup_dir):
             shutil.rmtree(backup_dir)
         # iniciar QApplication necesario para los widgets
@@ -108,7 +108,7 @@ class TestRespaldo(unittest.TestCase):
         view = ConfiguracionView()
         # crear respaldo
         view.crear_respaldo()
-        backup_dir = os.path.join(os.path.dirname(DB_PATH), 'backups')
+        backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), 'backups')
         self.assertTrue(os.path.isdir(backup_dir))
         files = [f for f in os.listdir(backup_dir) if f.endswith('.db')]
         self.assertGreater(len(files), 0, 'No se generó ningún respaldo')

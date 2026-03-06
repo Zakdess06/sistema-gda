@@ -187,7 +187,7 @@ class ConfiguracionView(QWidget):
         
         try:
             # Crear carpeta de respaldos si no existe
-            backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+            backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), "backups")
             os.makedirs(backup_dir, exist_ok=True)
             
             # Generar nombre del respaldo con timestamp
@@ -243,7 +243,7 @@ class ConfiguracionView(QWidget):
 
         def refresh_list():
             list_widget.clear()
-            backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+            backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), "backups")
             os.makedirs(backup_dir, exist_ok=True)
             # agregar archivos .db ordenados por nombre inverso (más recientes primero)
             for fname in sorted(os.listdir(backup_dir), reverse=True):
@@ -266,19 +266,22 @@ class ConfiguracionView(QWidget):
         btn_crear = QPushButton("Crear respaldo")
         btn_restaurar = QPushButton("Restaurar")
         btn_descargar = QPushButton("Descargar")
+        btn_eliminar = QPushButton("Eliminar")
         btn_cerrar = QPushButton("Cerrar")
 
         btn_crear.setObjectName("PrimaryButton")
         btn_restaurar.setObjectName("ActionButton")
         btn_descargar.setObjectName("ActionButton")
+        btn_eliminar.setObjectName("DangerButton")
         btn_cerrar.setObjectName("ActionButton")
 
-        for btn in (btn_crear, btn_restaurar, btn_descargar, btn_cerrar):
+        for btn in (btn_crear, btn_restaurar, btn_descargar, btn_eliminar, btn_cerrar):
             btn.setMinimumHeight(36)
 
         btn_layout.addWidget(btn_crear)
         btn_layout.addWidget(btn_restaurar)
         btn_layout.addWidget(btn_descargar)
+        btn_layout.addWidget(btn_eliminar)
         btn_layout.addStretch()
         btn_layout.addWidget(btn_cerrar)
 
@@ -300,7 +303,7 @@ class ConfiguracionView(QWidget):
                 QMessageBox.Yes | QMessageBox.No
             )
             if reply == QMessageBox.Yes:
-                backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+                backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), "backups")
                 src = os.path.join(backup_dir, item.text())
                 try:
                     shutil.copy2(src, DB_PATH)
@@ -318,7 +321,7 @@ class ConfiguracionView(QWidget):
             if not item:
                 QMessageBox.warning(dialog, "Error", "Seleccione un respaldo")
                 return
-            backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+            backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), "backups")
             src = os.path.join(backup_dir, item.text())
             dest, _ = QFileDialog.getSaveFileName(
                 dialog,
@@ -337,9 +340,35 @@ class ConfiguracionView(QWidget):
                 except Exception as e:
                     QMessageBox.critical(dialog, "Error", f"Error al descargar: {str(e)}")
 
+        def hacer_eliminar():
+            item = list_widget.currentItem()
+            if not item:
+                QMessageBox.warning(dialog, "Error", "Seleccione un respaldo para eliminar")
+                return
+            reply = QMessageBox.question(
+                dialog,
+                "Confirmar eliminacion",
+                f"¿Desea eliminar el respaldo '{item.text()}'?\n\nEsta acción no se puede deshacer.",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), "backups")
+                backup_path = os.path.join(backup_dir, item.text())
+                try:
+                    os.remove(backup_path)
+                    QMessageBox.information(
+                        dialog,
+                        "Eliminado",
+                        "Respaldo eliminado correctamente."
+                    )
+                    refresh_list()
+                except Exception as e:
+                    QMessageBox.critical(dialog, "Error", f"Error al eliminar: {str(e)}")
+
         btn_crear.clicked.connect(hacer_crear)
         btn_restaurar.clicked.connect(hacer_restaurar)
         btn_descargar.clicked.connect(hacer_descargar)
+        btn_eliminar.clicked.connect(hacer_eliminar)
         btn_cerrar.clicked.connect(dialog.accept)
 
         dialog.exec()

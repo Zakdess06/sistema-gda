@@ -35,18 +35,25 @@ def procesar_entradas_vs_salidas(entradas, salidas, n_dias: int = 7) -> Tuple[Di
             if fecha >= fecha_limite:
                 fecha_str = datetime.strftime(fecha, "%d/%m")
                 entradas_por_dia[fecha_str] += entrada.cantidad
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             pass
     
     # Procesar salidas (pueden ser Dict o List)
+    # Las salidas pueden venir en formato "%Y-%m-%d %H:%M" o "%d/%m/%Y"
     salidas_list = salidas.values() if isinstance(salidas, dict) else salidas
     for salida in salidas_list:
         try:
-            fecha = datetime.strptime(salida.fecha, "%d/%m/%Y").date()
+            # Intentar primero con formato con hora
+            try:
+                fecha = datetime.strptime(salida.fecha, "%Y-%m-%d %H:%M").date()
+            except ValueError:
+                # Si no coincide, intentar con formato sin hora
+                fecha = datetime.strptime(salida.fecha, "%d/%m/%Y").date()
+            
             if fecha >= fecha_limite:
                 fecha_str = datetime.strftime(fecha, "%d/%m")
                 salidas_por_dia[fecha_str] += salida.cantidad
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             pass
     
     # Rellenar fechas faltantes con 0

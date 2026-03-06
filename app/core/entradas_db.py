@@ -88,7 +88,7 @@ def insert_entrada(entrada: Entrada):
         cantidad=entrada.cantidad,
         ubicacion=entrada.ubicacion,
         proveedor=entrada.proveedor,
-        stock_minimo=0
+        stock_minimo=entrada.stock_minimo
     )
     
     insert_almacen_item(producto)
@@ -96,8 +96,16 @@ def insert_entrada(entrada: Entrada):
 
 def delete_entrada(partida: str):
     """Elimina una entrada (elimina el producto)"""
-    from app.core.almacen_db import delete_almacen_item
-    delete_almacen_item(partida)
+    from app.core.almacen_db import delete_almacen_item_by_id
+    # Obtener el ID del producto primero
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM productos WHERE partida = ?", (partida,))
+    result = cursor.fetchone()
+    return_connection(conn)
+    if result:
+        producto_id = result[0]
+        delete_almacen_item_by_id(producto_id)
 
 
 def update_entrada(entrada: Entrada):
@@ -117,7 +125,7 @@ def update_entrada(entrada: Entrada):
         cantidad=entrada.cantidad,
         ubicacion=entrada.ubicacion,
         proveedor=entrada.proveedor,
-        stock_minimo=0
+        stock_minimo=entrada.stock_minimo
     )
     
     update_almacen_item(producto)

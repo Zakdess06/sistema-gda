@@ -185,6 +185,7 @@ class EntradaDialog(QDialog):
                     proveedor=proveedor,
                     recibio=recibio,
                     ubicacion=ubicacion,
+                    stock_minimo=stock_minimo,
                     observaciones=obs
                 )
                 
@@ -201,6 +202,7 @@ class EntradaDialog(QDialog):
                 self.entrada.observaciones = obs
 
                 bitacora.log("Almacén", f"Producto actualizado: {self.entrada.partida} - {cantidad} {unidad}")
+                store.notify()  # Notificar cambios y recargar desde BD
                 event_manager.notify_entrada_add()  # Notificar cambios
                 QMessageBox.information(self, "Éxito", "Producto actualizado correctamente")
             else:
@@ -221,14 +223,15 @@ class EntradaDialog(QDialog):
                     proveedor=proveedor,
                     recibio=recibio,
                     ubicacion=ubicacion,
+                    stock_minimo=stock_minimo,
                     observaciones=obs
                 )
                 
                 # Guardar entrada (esto también guarda el producto en almacén)
                 insert_entrada(entrada_auditada)
-                store.entradas.append(entrada_auditada)
                 
                 bitacora.log("Almacén", f"Entrada registrada: {partida} ({descripcion}) - {cantidad} {unidad} | Proveedor: {proveedor} | Recibió: {recibio}")
+                store.notify()  # Notificar cambios y recargar datos desde BD
                 event_manager.notify_entrada_add()  # Notificar cambios para actualizar dashboard
                 QMessageBox.information(self, "Éxito", f"Producto registrado: {partida}")
 

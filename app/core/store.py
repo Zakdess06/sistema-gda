@@ -1,14 +1,4 @@
 
-# ===================== MODELOS =====================
-
-
-class Store:
-    def update_producto(self, producto):
-        from app.core.almacen_db import update_almacen_item
-        update_almacen_item(producto)
-        bitacora.log("Producto", f"Edición de producto {producto.partida} - {producto.descripcion}")
-        self.notify()
-        event_manager.notify_almacen_change()
 from dataclasses import dataclass
 from typing import Dict, List, Callable
 
@@ -43,6 +33,7 @@ class Entrada:
     proveedor: str
     recibio: str
     ubicacion: str
+    stock_minimo: int = 5
     observaciones: str = ""
 
 
@@ -103,6 +94,14 @@ class Store:
         bitacora.log("Producto", f"Alta de producto {producto.partida} - {producto.descripcion}")
         self.notify()
         event_manager.notify_almacen_change()
+
+    def update_producto(self, producto):
+        from app.core.almacen_db import update_almacen_item
+        update_almacen_item(producto)
+        bitacora.log("Producto", f"Edición de producto {producto.partida} - {producto.descripcion}")
+        self.notify()
+        event_manager.notify_almacen_change()
+
     def __init__(self):
         from app.core.almacen_db import fetch_all_almacen
         from app.core.entradas_db import fetch_all_entradas

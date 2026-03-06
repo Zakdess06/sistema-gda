@@ -188,6 +188,7 @@ class ProductoDialog(QDialog):
                 proveedor=proveedor,
                 recibio=recibio,
                 ubicacion=ubicacion,
+                stock_minimo=stock_minimo,
                 observaciones=""
             )
             insert_entrada(entrada_auditoria)
