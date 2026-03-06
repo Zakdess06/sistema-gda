@@ -22,19 +22,23 @@ def fetch_all_entradas():
         
         items = []
         for row in rows:
-            fecha, partida, descripcion, cantidad, unidad, proveedor, recibio, ubicacion, observaciones = row
-            items.append(Entrada(
-                codigo="",
-                fecha=fecha,
-                partida=partida,
-                descripcion=descripcion,
-                cantidad=cantidad,
-                unidad=unidad,
-                proveedor=proveedor,
-                recibio=recibio,
-                ubicacion=ubicacion,
-                observaciones=observaciones
-            ))
+            try:
+                fecha, partida, descripcion, cantidad, unidad, proveedor, recibio, ubicacion, observaciones = row
+                # Validar y convertir valores a strings válidos, evitando None
+                items.append(Entrada(
+                    codigo="",
+                    fecha=str(fecha) if fecha else "",
+                    partida=str(partida) if partida else "",
+                    descripcion=str(descripcion) if descripcion else "",
+                    cantidad=int(cantidad) if cantidad else 0,
+                    unidad=str(unidad) if unidad else "",
+                    proveedor=str(proveedor) if proveedor else "",
+                    recibio=str(recibio) if recibio else "",
+                    ubicacion=str(ubicacion) if ubicacion else "",
+                    observaciones=str(observaciones) if observaciones else ""
+                ))
+            except Exception:
+                continue
         return items
     except Exception:
         return []

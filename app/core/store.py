@@ -1,3 +1,14 @@
+
+# ===================== MODELOS =====================
+
+
+class Store:
+    def update_producto(self, producto):
+        from app.core.almacen_db import update_almacen_item
+        update_almacen_item(producto)
+        bitacora.log("Producto", f"Edición de producto {producto.partida} - {producto.descripcion}")
+        self.notify()
+        event_manager.notify_almacen_change()
 from dataclasses import dataclass
 from typing import Dict, List, Callable
 
@@ -11,12 +22,13 @@ from app.models.prestamo_herramienta import PrestamoHerramienta
 
 @dataclass
 class AlmacenItem:
-    partida: str
-    descripcion: str
-    unidad: str
-    cantidad: int
-    ubicacion: str
-    proveedor: str
+    id: str = ""
+    partida: str = ""
+    descripcion: str = ""
+    unidad: str = ""
+    cantidad: int = 0
+    ubicacion: str = ""
+    proveedor: str = ""
     stock_minimo: int = 5
 
 
@@ -79,125 +91,52 @@ class Trabajador:
 # ===================== STORE =====================
 
 class Store:
-    def seed_demo(self):
-        # Semilla mínima para pruebas: añadir algunos trabajadores temporales
-        # No sobreescribir si ya hay trabajadores cargados
-        if getattr(self, 'trabajadores', None):
-            return
-
-        self.trabajadores = {
-            'T001': Trabajador(id='T001', nombre='Juan Pérez'),
-            'T002': Trabajador(id='T002', nombre='María López'),
-            'T003': Trabajador(id='T003', nombre='Carlos Ruiz'),
-        }
-
-    def generar_codigo_herramienta(self) -> str:
-        """Genera un código único para herramienta con formato H-XXX.
-
-        Mantiene un contador en memoria para evitar duplicados si se
-        llaman varias veces antes de guardar en la base de datos.
-        """
-        # inicializar contador la primera vez
-        if not hasattr(self, '_herr_counter'):
-            herramientas = self.get_herramientas()
-            numeros = []
-            for codigo in herramientas.keys():
-                if codigo.startswith('H-'):
-                    try:
-                        num = int(codigo.split('-')[1])
-                        numeros.append(num)
-                    except (ValueError, IndexError):
-                        pass
-            self._herr_counter = max(numeros) + 1 if numeros else 1
-
-        codigo = f"H-{self._herr_counter:03d}"
-        self._herr_counter += 1
-        return codigo
-
-    def generar_codigo_partida(self) -> str:
-        """Genera un código único para partida con formato AAAAMMDD-PROD-XXX"""
-        from datetime import datetime
-        
-        # Obtener fecha actual en formato AAAAMMDD
-        fecha_hoy = datetime.now().strftime("%Y%m%d")
-        
-        almacen = self.get_almacen()
-        numeros = []
-        
-        # Buscar todas las partidas con la fecha actual
-        prefijo = f"{fecha_hoy}-PROD-"
-        for codigo in almacen.keys():
-            if codigo.startswith(prefijo):
-                try:
-                    num = int(codigo.split('-')[-1])  # Obtener el número al final
-                    numeros.append(num)
-                except (ValueError, IndexError):
-                    pass
-        
-        siguiente = max(numeros) + 1 if numeros else 1
-        return f"{fecha_hoy}-PROD-{siguiente:03d}"
-
-    def generar_codigo_entrada(self) -> str:
-        """Genera un código único para entrada con formato E-XXX"""
-        entradas = self.entradas
-        numeros = []
-        for entrada in entradas:
-            codigo = getattr(entrada, 'codigo', '')
-            if codigo.startswith('E-'):
-                try:
-                    num = int(codigo.split('-')[1])
-                    numeros.append(num)
-                except (ValueError, IndexError):
-                    pass
-        
-        siguiente = max(numeros) + 1 if numeros else 1
-        return f"E-{siguiente:03d}"
-
-    def add_producto(self, item):
+    def delete_producto(self, producto_id: str):
+        from app.core.almacen_db import delete_almacen_item_by_id, fetch_all_almacen
+        delete_almacen_item_by_id(producto_id)
+        self.notify()
+        event_manager.notify_almacen_change()
+    def add_producto(self, producto: AlmacenItem):
         from app.core.almacen_db import insert_almacen_item
-        insert_almacen_item(item)
+        new_id = insert_almacen_item(producto)
+        producto.id = new_id
+        bitacora.log("Producto", f"Alta de producto {producto.partida} - {producto.descripcion}")
         self.notify()
         event_manager.notify_almacen_change()
-
-    def update_producto(self, item):
-        from app.core.almacen_db import update_almacen_item
-        update_almacen_item(item)
-        self.notify()
-        event_manager.notify_almacen_change()
-
-    def delete_producto(self, partida):
-        from app.core.almacen_db import delete_almacen_item
-        delete_almacen_item(partida)
-        self.notify()
-        event_manager.notify_almacen_change()
-
     def __init__(self):
         from app.core.almacen_db import fetch_all_almacen
         from app.core.entradas_db import fetch_all_entradas
         from app.core.salidas_db import fetch_all_salidas
         from app.core.proveedor_db import fetch_all_proveedores
         from app.core.prestamo_db import fetch_all_prestamos
-        
+        from app.core.trabajador_db import fetch_all_trabajadores
         # Cargar desde BD
         self.entradas: List[Entrada] = fetch_all_entradas()
         self.salidas: List[Salida] = fetch_all_salidas()
         self.prestamos: List[PrestamoHerramienta] = fetch_all_prestamos()
         self.herramientas: Dict[str, Herramienta] = {}
+        # Cargar trabajadores solo desde la base de datos
         self.trabajadores: Dict[str, Trabajador] = {}
-        
+        for t in fetch_all_trabajadores():
+            self.trabajadores[t['id']] = Trabajador(id=t['id'], nombre=t['nombre'], numero_identificacion=t['identificacion'])
         # Cargar proveedores desde BD
         proveedores_lista = fetch_all_proveedores()
         self.proveedores: Dict[str, Proveedor] = {}
-        for prov_dict in proveedores_lista:
+        from app.core.proveedor_db import update_proveedor
+        for idx, prov_dict in enumerate(proveedores_lista, 1):
+            prov_id = prov_dict['id']
+            # Si el ID es None, asignar uno nuevo tipo PR-XXX y actualizar en BD
+            if prov_id is None or prov_id == 'None':
+                prov_id = f"PR-{idx:03d}"
+                update_proveedor(prov_id, prov_dict['nombre_comercial'], prov_dict['nombre_fiscal'], prov_dict['ubicacion'], prov_dict['telefono'])
             prov = Proveedor(
-                id=str(prov_dict['id']),
+                id=str(prov_id),
                 nombre_comercial=prov_dict['nombre_comercial'],
                 nombre_fiscal=prov_dict['nombre_fiscal'],
                 ubicacion=prov_dict['ubicacion'],
                 telefono=prov_dict['telefono']
             )
-            self.proveedores[str(prov_dict['id'])] = prov
-        
+            self.proveedores[str(prov_id)] = prov
         self._subscribers: List[Callable] = []
         self._almacen_cache = None  # Solo para compatibilidad, pero siempre se consulta la base
 
@@ -220,15 +159,10 @@ class Store:
         self.salidas = fetch_all_salidas()
         self.prestamos = fetch_all_prestamos()
         self.herramientas = {item.codigo: item for item in fetch_all_herramientas()}
-        # Restaurar trabajadores en memoria
-        if getattr(self, 'trabajadores', None):
-            self.trabajadores = self.trabajadores
-        else:
-            self.trabajadores = {
-                'T001': Trabajador(id='T001', nombre='Juan Pérez'),
-                'T002': Trabajador(id='T002', nombre='María López'),
-                'T003': Trabajador(id='T003', nombre='Carlos Ruiz'),
-            }
+        # Recargar trabajadores desde la base de datos
+        self.trabajadores.clear()
+        for t in fetch_all_trabajadores():
+            self.trabajadores[t['id']] = Trabajador(id=t['id'], nombre=t['nombre'], numero_identificacion=t['identificacion'])
         proveedores_lista = fetch_all_proveedores()
         self.proveedores = {str(p['id']): Proveedor(id=str(p['id']), nombre_comercial=p['nombre_comercial'], nombre_fiscal=p['nombre_fiscal'], ubicacion=p['ubicacion'], telefono=p['telefono']) for p in proveedores_lista}
         # Método tradicional de observadores
@@ -263,24 +197,27 @@ class Store:
 
     # ---------- PROVEEDORES (BASE DE DATOS) ----------
     def add_proveedor(self, proveedor: Proveedor):
-        from app.core.proveedor_db import insert_proveedor
-        pid = insert_proveedor(proveedor.nombre_comercial, proveedor.nombre_fiscal, proveedor.ubicacion, proveedor.telefono)
-        proveedor.id = str(pid)
-        self.proveedores[str(pid)] = proveedor
+        from app.core.proveedor_db import insert_proveedor, fetch_all_proveedores
+        new_id = insert_proveedor(proveedor.nombre_comercial, proveedor.nombre_fiscal, proveedor.ubicacion, proveedor.telefono)
+        proveedor.id = new_id  # Assign the correct string ID (PR-XXX)
+        # Recargar todos los proveedores desde la base de datos para reflejar correctamente los cambios
+        proveedores_lista = fetch_all_proveedores()
+        self.proveedores = {str(p['id']): Proveedor(id=str(p['id']), nombre_comercial=p['nombre_comercial'], nombre_fiscal=p['nombre_fiscal'], ubicacion=p['ubicacion'], telefono=p['telefono']) for p in proveedores_lista}
         self.notify()
         event_manager.notify_almacen_change()
 
     def update_proveedor(self, proveedor: Proveedor):
         from app.core.proveedor_db import update_proveedor
-        update_proveedor(int(proveedor.id), proveedor.nombre_comercial, proveedor.nombre_fiscal, proveedor.ubicacion, proveedor.telefono)
+        update_proveedor(proveedor.id, proveedor.nombre_comercial, proveedor.nombre_fiscal, proveedor.ubicacion, proveedor.telefono)
         self.notify()
         event_manager.notify_almacen_change()
 
     def delete_proveedor(self, proveedor_id: str):
-        from app.core.proveedor_db import delete_proveedor
-        delete_proveedor(int(proveedor_id))
-        if proveedor_id in self.proveedores:
-            del self.proveedores[proveedor_id]
+        from app.core.proveedor_db import delete_proveedor, fetch_all_proveedores
+        delete_proveedor(proveedor_id)
+        # Recargar todos los proveedores desde la base de datos para reflejar correctamente los cambios
+        proveedores_lista = fetch_all_proveedores()
+        self.proveedores = {str(p['id']): Proveedor(id=str(p['id']), nombre_comercial=p['nombre_comercial'], nombre_fiscal=p['nombre_fiscal'], ubicacion=p['ubicacion'], telefono=p['telefono']) for p in proveedores_lista}
         self.notify()
         event_manager.notify_almacen_change()
 
@@ -456,8 +393,29 @@ class Store:
             if item.cantidad <= config.stock_minimo
         ]
 
+    def generar_codigo_partida(self, proveedor_nombre=None):
+        """Genera un código único para partida con formato AAAAMMDD-XXXX-XXX, donde XXXX son las primeras 4 letras del proveedor."""
+        from datetime import datetime
+        fecha_hoy = datetime.now().strftime("%Y%m%d")
+        almacen = self.get_almacen()
+        numeros = []
+        # Determinar prefijo proveedor
+        if proveedor_nombre:
+            prefijo_prov = proveedor_nombre.strip().upper()[:4].ljust(4, 'X')
+        else:
+            prefijo_prov = "PROD"
+        prefijo = f"{fecha_hoy}-{prefijo_prov}-"
+        for codigo in almacen.keys():
+            if codigo.startswith(prefijo):
+                try:
+                    num = int(codigo.split('-')[-1])
+                    numeros.append(num)
+                except (ValueError, IndexError):
+                    pass
+        siguiente = max(numeros) + 1 if numeros else 1
+        return f"{fecha_hoy}-{prefijo_prov}-{siguiente:03d}"
+
 
 # ===================== SINGLETON =====================
 
 store = Store()
-store.seed_demo()

@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt
 
 from app.core.store import store, Trabajador
 from app.core.bitacora import bitacora
+from app.core.trabajador_db import insert_trabajador
 
 
 class TrabajadorDialog(QDialog):
@@ -89,17 +90,16 @@ class TrabajadorDialog(QDialog):
                             max_id = max(max_id, num)
                         except (ValueError, IndexError):
                             pass
-                
                 nuevo_id = f"T{max_id + 1:03d}"
-                
                 t = Trabajador(
                     id=nuevo_id,
                     nombre=nombre,
                     numero_identificacion=identificacion
                 )
                 store.trabajadores[nuevo_id] = t
-                bitacora.log("Trabajador", f"Nuevo trabajador registrado: {nombre}")
-                store.notify()
+                # Guardar en la base de datos
+                insert_trabajador(nombre, identificacion)
+                bitacora.log("Trabajador", f"Trabajador registrado: {nombre}")
                 QMessageBox.information(self, "OK", "Trabajador registrado")
             except Exception as e:
                 QMessageBox.critical(self, "Error", str(e))

@@ -1,9 +1,10 @@
 # app/views/restock_dialog.py
 
 from PySide6.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QSpinBox, QLabel, QMessageBox
+    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QSpinBox, QLabel, QMessageBox, QComboBox
 )
 from PySide6.QtCore import Qt
+from app.core.trabajador_db import fetch_all_trabajadores
 
 
 class RestockDialog(QDialog):
@@ -51,6 +52,16 @@ class RestockDialog(QDialog):
         self.spin_cantidad.valueChanged.connect(self.actualizar_nueva_cantidad)
         layout.addRow("Cantidad Total:", self.lbl_nueva_cantidad)
 
+        # Campo trabajador que recibe
+        self.cmb_recibio = QComboBox()
+        self.cmb_recibio.addItem("")
+        try:
+            for trab in fetch_all_trabajadores():
+                self.cmb_recibio.addItem(trab['nombre'])
+        except Exception:
+            pass
+        layout.insertRow(4, "Recibió:", self.cmb_recibio)
+
         # Botones
         btn_layout = QHBoxLayout()
         self.btn_ok = QPushButton("Confirmar Restock")
@@ -78,4 +89,5 @@ class RestockDialog(QDialog):
         """Guarda el restock"""
         cantidad_a_agregar = self.spin_cantidad.value()
         self.producto.cantidad += cantidad_a_agregar
+        self.recibio = self.cmb_recibio.currentText().strip()
         self.accept()

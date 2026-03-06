@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt, QDateTime, QTimer
-from PySide6.QtGui import QFont
 from datetime import datetime
 import json
 from pathlib import Path

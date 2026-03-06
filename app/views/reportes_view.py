@@ -38,6 +38,7 @@ class ReportesView(QWidget):
         self.table = QTableWidget()
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.horizontalHeader().setStretchLastSection(True)
+        # No establecer stylesheet aquí - se aplicará en populate_table()
         layout.addWidget(self.table)
 
         btn_export = QPushButton("Exportar a Excel")
@@ -45,6 +46,10 @@ class ReportesView(QWidget):
         layout.addWidget(btn_export)
 
         self.load_preview()
+        # Actualizar automáticamente cuando cambie el almacén o entradas
+        from app.core.event_manager import event_manager
+        event_manager.almacen_changed.connect(self.load_preview)
+        event_manager.entrada_added.connect(self.load_preview)
 
     # ---------- PREVIEW ----------
 
@@ -70,21 +75,35 @@ class ReportesView(QWidget):
             headers = [
                 "Fecha", "Partida", "Descripción",
                 "Cantidad", "Unidad", "Proveedor",
-                "Recibió", "Ubicación"
+                "Recibió", "Ubicación", "Tipo Movimiento"
             ]
-            rows = [
-                (
-                    e.fecha,
-                    e.partida,
-                    e.descripcion,
-                    e.cantidad,
-                    e.unidad,
-                    e.proveedor,
-                    e.recibio,
-                    e.ubicacion
-                )
-                for e in store.entradas
-            ]
+            try:
+                from app.core.entradas_db import fetch_all_entradas
+                entradas = fetch_all_entradas()
+                rows = []
+                if entradas:
+                    for e in entradas:
+                        try:
+                            rows.append((
+                                str(e.fecha) if e.fecha else "",
+                                str(e.partida) if e.partida else "",
+                                str(e.descripcion) if e.descripcion else "",
+                                str(e.cantidad) if e.cantidad else "",
+                                str(e.unidad) if e.unidad else "",
+                                str(e.proveedor) if e.proveedor else "",
+                                str(e.recibio) if e.recibio else "",
+                                str(e.ubicacion) if e.ubicacion else "",
+                                str(e.observaciones) if e.observaciones else "Alta"
+                            ))
+                        except Exception as ex:
+                            print(f"Error procesando entrada: {ex}")
+                            continue
+                else:
+                    # Si no hay entradas, mostrar mensaje vacío
+                    rows = []
+            except Exception as ex:
+                print(f"Error cargando entradas: {ex}")
+                rows = []
 
         elif tipo == "Salidas":
             headers = [
@@ -160,20 +179,81 @@ class ReportesView(QWidget):
         self.populate_table(headers, rows)
 
     def populate_table(self, headers, rows):
-        self.table.clear()
-        self.table.setRowCount(0)
-        self.table.setColumnCount(len(headers))
-        self.table.setHorizontalHeaderLabels(headers)
+        try:
+            self.table.clear()
+            self.table.setRowCount(0)
+            self.table.setColumnCount(len(headers))
+            self.table.setHorizontalHeaderLabels(headers)
+            
+            # Ajustar anchos según columnas actuales ANTES de llenar
+            if len(headers) > 0:
+                ajustar_ancho_tabla(self.table)
 
-        # Ajustar anchos según columnas actuales
-        ajustar_ancho_tabla(self.table)
+            # PRIMERO llenar los datos
+            for row_data in rows:
+                row = self.table.rowCount()
+                self.table.insertRow(row)
 
-        for row_data in rows:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-
-            for col, value in enumerate(row_data):
-                self.table.setItem(row, col, QTableWidgetItem(str(value)))
+                for col, value in enumerate(row_data):
+                    # Validar y convertir valor a string seguro
+                    if value is None or value == "None":
+                        cell_value = ""
+                    else:
+                        cell_value = str(value).strip()
+                    
+                    # Crear item sin aplicar QFont
+                    item = QTableWidgetItem(cell_value)
+                    # No aplicar font, dejar que use el stylesheet
+                    self.table.setItem(row, col, item)
+            
+            # ENTONCES aplicar estilos fijos DESPUÉS de crear items
+            self.table.setStyleSheet("""
+                QTableWidget {
+                    font-size: 14px;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    selection-background-color: #2563eb;
+                    gridline-color: #374151;
+                    background-color: #0f1419;
+                    alternate-background-color: #1a1f2e;
+                }
+                QTableWidget::item {
+                    padding: 4px 2px;
+                    height: 28px;
+                    color: #e5e7eb;
+                    background-color: transparent;
+                    font-size: 14px;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                }
+                QTableWidget::item:selected {
+                    background-color: #2563eb;
+                    color: #ffffff;
+                    font-size: 14px;
+                }
+                QTableWidget::item:hover {
+                    background-color: #1f2937;
+                }
+                QHeaderView {
+                    font-size: 14px;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                }
+                QHeaderView::section {
+                    background-color: #1f2937;
+                    color: #f0f4f8;
+                    padding: 5px 2px;
+                    border: none;
+                    font-size: 14px;
+                    font-weight: bold;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    border-right: 1px solid #374151;
+                }
+                QTableView {
+                    font-size: 14px;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                }
+            """)
+            
+        except Exception as e:
+            print(f"Error poblando tabla: {e}")
 
     # ---------- EXPORT ----------
 
@@ -230,7 +310,7 @@ class ReportesView(QWidget):
         headers = [
             "Fecha", "Partida", "Descripción",
             "Cantidad", "Unidad", "Proveedor",
-            "Recibió", "Ubicación", "Observaciones"
+            "Recibió", "Ubicación", "Tipo Movimiento"
         ]
         rows = [
             (

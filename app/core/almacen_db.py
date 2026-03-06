@@ -18,6 +18,7 @@ def fetch_all_almacen():
     # ✅ UN SOLO QUERY con JOIN en lugar de uno por cada fila
     cursor.execute("""
         SELECT 
+            p.id,
             p.partida, 
             p.descripcion, 
             p.unidad, 
@@ -34,8 +35,9 @@ def fetch_all_almacen():
     
     items = []
     for row in rows:
-        partida, descripcion, unidad, cantidad, ubicacion, stock_minimo, proveedor_name = row
+        id_, partida, descripcion, unidad, cantidad, ubicacion, stock_minimo, proveedor_name = row
         items.append(AlmacenItem(
+            id=id_,
             partida=partida,
             descripcion=descripcion,
             unidad=unidad,
@@ -54,18 +56,29 @@ def insert_almacen_item(item: AlmacenItem):
     cursor = conn.cursor()
     prov_id = None
     if getattr(item, 'proveedor', None):
-        # crear o recuperar proveedor por nombre
         prov_id = get_or_create_proveedor(item.proveedor, ubicacion=item.ubicacion or "")
 
+    # Generar nuevo ID tipo P-XXX evitando duplicados
+    cursor.execute("SELECT id FROM productos WHERE id LIKE 'P-%'")
+    existing_ids = cursor.fetchall()
+    max_num = 0
+    for (pid,) in existing_ids:
+        try:
+            num = int(pid.split('-')[1])
+            if num > max_num:
+                max_num = num
+        except Exception:
+            continue
+    new_id = f"P-{max_num + 1:03d}"
     cursor.execute(
-        "INSERT INTO productos (partida, descripcion, unidad, cantidad, ubicacion, stock_minimo, proveedor_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (item.partida, item.descripcion, item.unidad, item.cantidad, item.ubicacion, item.stock_minimo, prov_id)
+        "INSERT INTO productos (id, partida, descripcion, unidad, cantidad, ubicacion, stock_minimo, proveedor_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (new_id, item.partida, item.descripcion, item.unidad, item.cantidad, item.ubicacion, item.stock_minimo, prov_id)
     )
     conn.commit()
     return_connection(conn)
-    
     # Invalidar caché
     cache.delete("almacen_all")
+    return new_id
 
 def update_almacen_cantidad(partida: str, cantidad: int):
     conn = get_connection()
@@ -83,17 +96,17 @@ def update_almacen_item(item: AlmacenItem):
         prov_id = get_or_create_proveedor(item.proveedor, ubicacion=item.ubicacion or "")
 
     cursor.execute(
-        "UPDATE productos SET descripcion=?, unidad=?, cantidad=?, ubicacion=?, stock_minimo=?, proveedor_id=? WHERE partida=?",
-        (item.descripcion, item.unidad, item.cantidad, item.ubicacion, item.stock_minimo, prov_id, item.partida)
+        "UPDATE productos SET descripcion=?, unidad=?, cantidad=?, ubicacion=?, stock_minimo=?, proveedor_id=? WHERE id=?",
+        (item.descripcion, item.unidad, item.cantidad, item.ubicacion, item.stock_minimo, prov_id, item.id)
     )
     conn.commit()
     return_connection(conn)
     cache.delete("almacen_all")
 
-def delete_almacen_item(partida: str):
+def delete_almacen_item_by_id(producto_id: str):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM productos WHERE partida = ?", (partida,))
+    cursor.execute("DELETE FROM productos WHERE id = ?", (producto_id,))
     conn.commit()
     return_connection(conn)
     cache.delete("almacen_all")

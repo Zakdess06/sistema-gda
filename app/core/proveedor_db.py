@@ -2,7 +2,7 @@ from typing import Optional, List, Dict
 from app.core.database import get_connection, return_connection
 
 
-def fetch_proveedor_by_id(pid: int) -> Optional[Dict]:
+def fetch_proveedor_by_id(pid: str) -> Optional[Dict]:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, nombre_comercial, nombre_fiscal, ubicacion, telefono FROM proveedores WHERE id = ?", (pid,))
@@ -21,6 +21,7 @@ def fetch_proveedor_by_id(pid: int) -> Optional[Dict]:
 
 
 def fetch_all_proveedores() -> List[Dict]:
+
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, nombre_comercial, nombre_fiscal, ubicacion, telefono FROM proveedores")
@@ -37,6 +38,22 @@ def fetch_all_proveedores() -> List[Dict]:
             'telefono': telefono,
         })
     return result
+
+
+def insert_proveedor(nombre_comercial, nombre_fiscal, ubicacion, telefono):
+    conn = get_connection()
+    cursor = conn.cursor()
+    # Generar nuevo ID tipo PR-XXX
+    cursor.execute("SELECT COUNT(*) FROM proveedores")
+    count = cursor.fetchone()[0] + 1
+    new_id = f"PR-{count:03d}"
+    cursor.execute(
+        "INSERT INTO proveedores (id, nombre_comercial, nombre_fiscal, ubicacion, telefono) VALUES (?, ?, ?, ?, ?)",
+        (new_id, nombre_comercial, nombre_fiscal, ubicacion, telefono)
+    )
+    conn.commit()
+    return_connection(conn)
+    return new_id
 
 
 def get_or_create_proveedor(nombre_comercial: str, ubicacion: str = '', telefono: str = '') -> int:
@@ -63,21 +80,24 @@ def get_or_create_proveedor(nombre_comercial: str, ubicacion: str = '', telefono
     return_connection(conn)
     return pid
 
-def insert_proveedor(nombre_comercial: str, nombre_fiscal: str, ubicacion: str = '', telefono: str = '') -> int:
-    """Inserta un nuevo proveedor en la base de datos"""
+def insert_proveedor(nombre_comercial: str, nombre_fiscal: str, ubicacion: str = '', telefono: str = '') -> str:
+    """Inserta un nuevo proveedor en la base de datos con un ID tipo PR-XXX y lo retorna"""
     conn = get_connection()
     cursor = conn.cursor()
+    # Generar nuevo ID tipo PR-XXX
+    cursor.execute("SELECT COUNT(*) FROM proveedores")
+    count = cursor.fetchone()[0] + 1
+    new_id = f"PR-{count:03d}"
     cursor.execute(
-        "INSERT INTO proveedores (nombre_comercial, nombre_fiscal, ubicacion, telefono) VALUES (?, ?, ?, ?)",
-        (nombre_comercial, nombre_fiscal, ubicacion, telefono)
+        "INSERT INTO proveedores (id, nombre_comercial, nombre_fiscal, ubicacion, telefono) VALUES (?, ?, ?, ?, ?)",
+        (new_id, nombre_comercial, nombre_fiscal, ubicacion, telefono)
     )
     conn.commit()
-    pid = cursor.lastrowid
     return_connection(conn)
-    return pid
+    return new_id
 
 
-def update_proveedor(pid: int, nombre_comercial: str, nombre_fiscal: str, ubicacion: str = '', telefono: str = ''):
+def update_proveedor(pid: str, nombre_comercial: str, nombre_fiscal: str, ubicacion: str = '', telefono: str = ''):
     """Actualiza un proveedor existente"""
     conn = get_connection()
     cursor = conn.cursor()

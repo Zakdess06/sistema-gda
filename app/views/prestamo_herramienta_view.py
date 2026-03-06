@@ -510,11 +510,16 @@ class PrestamoHerramientaView(QWidget):
         self.combo_prestamo_devolver.clear()
 
         prestamos = self.controller.listar_prestamos_activos()
-        for p in prestamos:
-            herr = store.herramientas.get(p.herramienta_codigo)
-            herr_desc = f"{p.herramienta_codigo}" if herr else p.herramienta_codigo
-            texto = f"{p.id} - {herr_desc} ({p.trabajador_solicita_id})"
-            self.combo_prestamo_devolver.addItem(texto, p.id)
+        for i, p in enumerate(prestamos):
+            row = self.combo_prestamo_devolver.rowCount()
+            self.combo_prestamo_devolver.insertRow(row)
+            self.combo_prestamo_devolver.setItem(row, 0, QTableWidgetItem(str(p.id_prestamo)))  # ID
+            self.combo_prestamo_devolver.setItem(row, 1, QTableWidgetItem(p.codigo_herramienta))
+            self.combo_prestamo_devolver.setItem(row, 2, QTableWidgetItem(p.nombre_herramienta))
+            self.combo_prestamo_devolver.setItem(row, 3, QTableWidgetItem(p.nombre_trabajador))
+            self.combo_prestamo_devolver.setItem(row, 4, QTableWidgetItem(p.fecha_prestamo))
+            self.combo_prestamo_devolver.setItem(row, 5, QTableWidgetItem(p.fecha_devolucion or ""))
+            self.combo_prestamo_devolver.setItem(row, 6, QTableWidgetItem(p.estado))
 
         self.combo_prestamo_devolver.blockSignals(False)
         self.actualizar_detalles_prestamo()
@@ -562,6 +567,7 @@ class PrestamoHerramientaView(QWidget):
 
         trab_solicita = store.trabajadores.get(prestamo.trabajador_solicita_id)
         trab_despacha = store.trabajadores.get(prestamo.trabajador_despacha_id)
+        trab_recibe = store.trabajadores.get(prestamo.trabajador_recibe_id)
 
         self.lbl_herr_devolver.setText(herr_desc)
         self.lbl_estado_prestamo.setText(prestamo.estado_herramienta_prestamo)
@@ -588,28 +594,22 @@ class PrestamoHerramientaView(QWidget):
         self.table_activos.setRowCount(0)
         prestamos = self.controller.listar_prestamos_activos()
 
-        for prestamo in prestamos:
+        for i, p in enumerate(prestamos):
             row = self.table_activos.rowCount()
             self.table_activos.insertRow(row)
-
-            herr = store.herramientas.get(prestamo.herramienta_codigo)
-            herr_desc = f"{prestamo.herramienta_codigo} - {herr.descripcion}" if herr else prestamo.herramienta_codigo
-
-            trab_solicita = store.trabajadores.get(prestamo.trabajador_solicita_id)
-            trab_despacha = store.trabajadores.get(prestamo.trabajador_despacha_id)
-
-            self.table_activos.setItem(row, 0, QTableWidgetItem(prestamo.id))
-            self.table_activos.setItem(row, 1, QTableWidgetItem(herr_desc))
-            self.table_activos.setItem(row, 2, QTableWidgetItem(trab_solicita.nombre if trab_solicita else prestamo.trabajador_solicita_id))
-            self.table_activos.setItem(row, 3, QTableWidgetItem(trab_despacha.nombre if trab_despacha else prestamo.trabajador_despacha_id))
-            self.table_activos.setItem(row, 4, QTableWidgetItem(prestamo.fecha_prestamo))
-            self.table_activos.setItem(row, 5, QTableWidgetItem(prestamo.estado_herramienta_prestamo))
+            self.table_activos.setItem(row, 0, QTableWidgetItem(str(p.id_prestamo)))  # ID
+            self.table_activos.setItem(row, 1, QTableWidgetItem(p.codigo_herramienta))
+            self.table_activos.setItem(row, 2, QTableWidgetItem(p.nombre_herramienta))
+            self.table_activos.setItem(row, 3, QTableWidgetItem(p.nombre_trabajador))
+            self.table_activos.setItem(row, 4, QTableWidgetItem(p.fecha_prestamo))
+            self.table_activos.setItem(row, 5, QTableWidgetItem(p.fecha_devolucion or ""))
+            self.table_activos.setItem(row, 6, QTableWidgetItem(p.estado))
 
             # resaltar si está vencido
             try:
                 from app.controllers.prestamo_herramienta_controller import PrestamoHerramientaController
                 vencidos = [p.id for p in PrestamoHerramientaController.listar_prestamos_vencidos()]
-                if prestamo.id in vencidos:
+                if p.id_prestamo in vencidos:
                     for col in range(self.table_activos.columnCount()):
                         it = self.table_activos.item(row, col)
                         if it:

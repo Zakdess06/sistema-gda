@@ -4,6 +4,11 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from app.core.store import store, AlmacenItem
+from app.core.entradas_db import insert_entrada
+from app.core.store import Entrada
+from datetime import datetime
+from app.core.event_manager import event_manager
+from app.core.trabajador_db import fetch_all_trabajadores
 
 
 class ProductoDialog(QDialog):
@@ -58,6 +63,16 @@ class ProductoDialog(QDialog):
         self.txt_descripcion.setPlaceholderText("Descripción del producto")
         self.txt_ubicacion.setPlaceholderText("Ej: Estante A, Gaveta 3")
 
+        # Campo trabajador que recibe
+        self.cmb_recibio = QComboBox()
+        self.cmb_recibio.addItem("")
+        try:
+            for trab in fetch_all_trabajadores():
+                self.cmb_recibio.addItem(trab['nombre'])
+        except Exception:
+            pass
+        layout.insertRow(7, "Recibió:", self.cmb_recibio)
+
         # Cargar datos si es edición
         if producto:
             self.txt_partida.setText(producto.partida)
@@ -74,7 +89,9 @@ class ProductoDialog(QDialog):
                     self.cmb_proveedor.setCurrentIndex(index)
         else:
             # Auto-generar código para nuevo producto
-            codigo_auto = store.generar_codigo_partida()
+            self.cmb_proveedor.currentTextChanged.connect(self.actualizar_codigo_partida)
+            proveedor_nombre = self.cmb_proveedor.currentText().strip()
+            codigo_auto = store.generar_codigo_partida(proveedor_nombre)
             self.txt_partida.setText(codigo_auto)
             self.txt_partida.setReadOnly(True)
 
@@ -85,6 +102,7 @@ class ProductoDialog(QDialog):
         layout.addRow("Stock Mínimo:", self.spin_stock_minimo)
         layout.addRow("Ubicación:", self.txt_ubicacion)
         layout.addRow("Proveedor:", self.cmb_proveedor)
+        layout.addRow("Recibió:", self.cmb_recibio)
 
         # Botones
         btn_layout = QHBoxLayout()
@@ -112,6 +130,7 @@ class ProductoDialog(QDialog):
         stock_minimo = self.spin_stock_minimo.value()
         ubicacion = self.txt_ubicacion.text().strip()
         proveedor = self.cmb_proveedor.currentText().strip()
+        recibio = self.cmb_recibio.currentText().strip()
 
         if not partida:
             QMessageBox.warning(self, "Error", "La partida es obligatoria")
@@ -121,9 +140,6 @@ class ProductoDialog(QDialog):
             QMessageBox.warning(self, "Error", "La descripción es obligatoria")
             return
 
-        if stock_minimo == 0:
-            QMessageBox.warning(self, "Error", "El stock mínimo es obligatorio")
-            return
 
         if not ubicacion:
             QMessageBox.warning(self, "Error", "La ubicación es obligatoria")
@@ -156,9 +172,25 @@ class ProductoDialog(QDialog):
                 proveedor=proveedor,
                 stock_minimo=stock_minimo
             )
-            self.producto = nuevo  # Asignar al atributo para poder acceder después
             store.add_producto(nuevo)
-
+            # --- REGISTRAR ENTRADA EN AUDITORÍA ---
+            from app.core.entradas_db import insert_entrada
+            from app.core.store import Entrada
+            from datetime import datetime
+            recibio = self.cmb_recibio.currentText().strip()
+            entrada_auditoria = Entrada(
+                codigo="",
+                fecha=datetime.now().strftime("%d/%m/%Y"),
+                partida=partida,
+                descripcion=descripcion,
+                cantidad=cantidad,
+                unidad=unidad,
+                proveedor=proveedor,
+                recibio=recibio,
+                ubicacion=ubicacion,
+                observaciones=""
+            )
+            insert_entrada(entrada_auditoria)
         self.accept()
 
     def get_data(self):
@@ -166,7 +198,8 @@ class ProductoDialog(QDialog):
             self.txt_descripcion.text().strip(),
             self.spin_cantidad.value(),
             self.txt_ubicacion.text().strip(),
-            self.cmb_proveedor.currentText().strip()
+            self.cmb_proveedor.currentText().strip(),
+            self.cmb_recibio.currentText().strip()
         )
 
     def set_data(self, d, c, u, p):
@@ -177,3 +210,10 @@ class ProductoDialog(QDialog):
             self.cmb_proveedor.setCurrentText(p)
         except Exception:
             self.cmb_proveedor.setEditText(p or "")
+
+    def actualizar_codigo_partida(self):
+        # Solo actualizar si es un producto nuevo (no edición)
+        if not self.producto:
+            proveedor_nombre = self.cmb_proveedor.currentText().strip()
+            codigo_auto = store.generar_codigo_partida(proveedor_nombre)
+            self.txt_partida.setText(codigo_auto)

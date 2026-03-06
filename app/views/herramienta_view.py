@@ -32,16 +32,17 @@ class HerramientasView(QWidget):
         layout.addLayout(btns)
 
         # ===== TABLA =====
-        self.table = QTableWidget(0, 5)
+        self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels([
-            "Código", "Descripción", "Ubicación", "Cantidad", "Observaciones"
+            "ID", "Código", "Descripción", "Ubicación", "Cantidad", "Observaciones"
         ])
         ajustar_ancho_tabla(self.table, anchos={
-            0: 100,   # Código
-            1: 280,   # Descripción
-            2: 150,   # Ubicación
-            3: 80,    # Cantidad
-            4: 200    # Observaciones (se estira)
+            0: 100,   # ID (Código)
+            1: 100,   # Código
+            2: 280,   # Descripción
+            3: 150,   # Ubicación
+            4: 80,    # Cantidad
+            5: 200    # Observaciones (se estira)
         })
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
@@ -64,17 +65,18 @@ class HerramientasView(QWidget):
         for h in herramientas.values():
             row = self.table.rowCount()
             self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(h.codigo))
-            self.table.setItem(row, 1, QTableWidgetItem(h.descripcion))
-            self.table.setItem(row, 2, QTableWidgetItem(h.ubicacion))
-            self.table.setItem(row, 3, QTableWidgetItem(str(h.cantidad)))
-            self.table.setItem(row, 4, QTableWidgetItem(getattr(h, 'observaciones', '')))
+            self.table.setItem(row, 0, QTableWidgetItem(h.codigo))  # ID = código
+            self.table.setItem(row, 1, QTableWidgetItem(h.codigo))
+            self.table.setItem(row, 2, QTableWidgetItem(h.descripcion))
+            self.table.setItem(row, 3, QTableWidgetItem(h.ubicacion))
+            self.table.setItem(row, 4, QTableWidgetItem(str(h.cantidad)))
+            self.table.setItem(row, 5, QTableWidgetItem(getattr(h, 'observaciones', '')))
 
     def selected_codigo(self):
         row = self.table.currentRow()
         if row < 0:
             return None
-        return self.table.item(row, 0).text()
+        return self.table.item(row, 1).text()
 
     # ---------- ACCIONES ----------
     def agregar(self):

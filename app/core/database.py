@@ -63,21 +63,21 @@ def init_database():
     # Tabla productos
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS productos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             partida TEXT NOT NULL,
             descripcion TEXT,
             unidad TEXT,
             ubicacion TEXT,
             cantidad INTEGER DEFAULT 0,
             stock_minimo INTEGER DEFAULT 0,
-            proveedor_id INTEGER
+            proveedor_id TEXT
         )
     """)
 
     # Tabla herramientas
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS herramientas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             partida TEXT NOT NULL,
             descripcion TEXT,
             ubicacion TEXT,
@@ -89,7 +89,7 @@ def init_database():
     # Tabla trabajadores
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS trabajadores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             nombre TEXT NOT NULL,
             identificacion TEXT UNIQUE
         )
@@ -98,7 +98,7 @@ def init_database():
     # Tabla proveedores
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proveedores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             nombre_comercial TEXT,
             nombre_fiscal TEXT,
             ubicacion TEXT,

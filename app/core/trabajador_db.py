@@ -14,14 +14,17 @@ def fetch_all_trabajadores():
 def insert_trabajador(nombre, identificacion):
     conn = get_connection()
     cursor = conn.cursor()
+    # Generar nuevo ID tipo T-XXX
+    cursor.execute("SELECT COUNT(*) FROM trabajadores")
+    count = cursor.fetchone()[0] + 1
+    new_id = f"T-{count:03d}"
     cursor.execute(
-        "INSERT INTO trabajadores (nombre, identificacion) VALUES (?, ?)",
-        (nombre, identificacion)
+        "INSERT INTO trabajadores (id, nombre, identificacion) VALUES (?, ?, ?)",
+        (new_id, nombre, identificacion)
     )
     conn.commit()
-    pid = cursor.lastrowid
     return_connection(conn)
-    return pid
+    return new_id
 
 def update_trabajador(id, nombre, identificacion):
     conn = get_connection()

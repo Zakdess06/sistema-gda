@@ -12,6 +12,8 @@ from app.core.config import config
 from app.views.trabajador_dialog import TrabajadorDialog
 from app.views.proveedor_dialog import ProveedorDialog
 from app.utils.table_utils import ajustar_ancho_tabla
+from app.core.trabajador_db import delete_trabajador, fetch_all_trabajadores
+from app.models.trabajador import Trabajador
 
 
 class ConfiguracionView(QWidget):
@@ -373,9 +375,9 @@ class ConfiguracionView(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Tabla de trabajadores
-        self.table = QTableWidget(0, 2)
-        self.table.setHorizontalHeaderLabels(["Nombre", "Identificación"])
-        ajustar_ancho_tabla(self.table, anchos={0: 320, 1: 200})
+        self.table = QTableWidget(0, 3)
+        self.table.setHorizontalHeaderLabels(["ID", "Nombre", "Identificación"])
+        ajustar_ancho_tabla(self.table, anchos={0: 120, 1: 320, 2: 200})
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setAlternatingRowColors(True)
@@ -421,20 +423,27 @@ class ConfiguracionView(QWidget):
     def cargar_trabajadores_tabla(self):
         """Carga los trabajadores en la tabla"""
         self.table.setRowCount(0)
-        for trab in store.trabajadores.values():
+        for t in store.trabajadores.values():
             row = self.table.rowCount()
             self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(trab.nombre))
-            self.table.setItem(row, 1, QTableWidgetItem(trab.numero_identificacion))
+            self.table.setItem(row, 0, QTableWidgetItem(str(t.id)))  # ID
+            self.table.setItem(row, 1, QTableWidgetItem(t.nombre))
+            self.table.setItem(row, 2, QTableWidgetItem(t.numero_identificacion))
 
     def agregar_trabajador(self, parent_dialog):
         """Abre dialog para agregar trabajador"""
+        from app.core.trabajador_db import fetch_all_trabajadores
         dialog = TrabajadorDialog(parent_dialog)
         if dialog.exec() == QDialog.Accepted:
+            # Recargar trabajadores desde la base de datos
+            store.trabajadores.clear()
+            for t in fetch_all_trabajadores():
+                store.trabajadores[t['id']] = Trabajador(id=t['id'], nombre=t['nombre'], numero_identificacion=t['identificacion'])
             self.cargar_trabajadores_tabla()
 
     def editar_trabajador(self, parent_dialog):
         """Abre dialog para editar trabajador seleccionado"""
+        from app.core.trabajador_db import fetch_all_trabajadores
         row = self.table.currentRow()
         if row < 0:
             QMessageBox.warning(parent_dialog, "Error", "Seleccione un trabajador")
@@ -454,16 +463,22 @@ class ConfiguracionView(QWidget):
 
         dialog = TrabajadorDialog(parent_dialog, trabajador)
         if dialog.exec() == QDialog.Accepted:
+            # Recargar trabajadores desde la base de datos
+            store.trabajadores.clear()
+            for t in fetch_all_trabajadores():
+                store.trabajadores[t['id']] = Trabajador(id=t['id'], nombre=t['nombre'], numero_identificacion=t['identificacion'])
             self.cargar_trabajadores_tabla()
 
     def eliminar_trabajador(self, parent_dialog):
         """Elimina el trabajador seleccionado"""
+        from app.core.trabajador_db import delete_trabajador, fetch_all_trabajadores
         row = self.table.currentRow()
         if row < 0:
             QMessageBox.warning(parent_dialog, "Error", "Seleccione un trabajador")
             return
 
         nombre = self.table.item(row, 0).text()
+        identificacion = self.table.item(row, 1).text()
         confirm = QMessageBox.question(
             parent_dialog,
             "Confirmar eliminación",
@@ -472,13 +487,25 @@ class ConfiguracionView(QWidget):
         )
 
         if confirm == QMessageBox.Yes:
-            # Encontrar y eliminar del store
+            # Buscar el trabajador por identificación
+            trabajador_id = None
             for trab_id, trab in list(store.trabajadores.items()):
-                if trab.nombre == nombre:
-                    del store.trabajadores[trab_id]
-                    store.notify()
-                    self.cargar_trabajadores_tabla()
-                    return
+                if trab.numero_identificacion == identificacion:
+                    trabajador_id = trab_id
+                    break
+            if trabajador_id:
+                # Eliminar de la base de datos
+                delete_trabajador(identificacion)
+                # Eliminar del store
+                del store.trabajadores[trabajador_id]
+                # Recargar trabajadores desde la base de datos
+                store.trabajadores.clear()
+                for t in fetch_all_trabajadores():
+                    store.trabajadores[t['id']] = Trabajador(id=t['id'], nombre=t['nombre'], numero_identificacion=t['identificacion'])
+                store.notify()
+                self.cargar_trabajadores_tabla()
+            else:
+                QMessageBox.warning(parent_dialog, "Error", "Trabajador no encontrado")
 
     def abrir_gestor_proveedores(self):
         """Abre ventana para gestionar proveedores"""
@@ -492,9 +519,9 @@ class ConfiguracionView(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Tabla de proveedores
-        self.table_prov = QTableWidget(0, 4)
-        self.table_prov.setHorizontalHeaderLabels(["Nombre Comercial", "Nombre Fiscal", "Ubicación", "Teléfono"])
-        ajustar_ancho_tabla(self.table_prov, anchos={0: 260, 1: 240, 2: 220, 3: 140})
+        self.table_prov = QTableWidget(0, 5)
+        self.table_prov.setHorizontalHeaderLabels(["ID", "Nombre Comercial", "Nombre Fiscal", "Ubicación", "Teléfono"])
+        ajustar_ancho_tabla(self.table_prov, anchos={0: 80, 1: 260, 2: 240, 3: 220, 4: 140})
         self.table_prov.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table_prov.setSelectionBehavior(QTableWidget.SelectRows)
         self.table_prov.setAlternatingRowColors(True)
@@ -538,15 +565,18 @@ class ConfiguracionView(QWidget):
         dialog.exec()
 
     def cargar_proveedores_tabla(self):
-        """Carga los proveedores en la tabla"""
+        """Carga los proveedores en la tabla desde la base de datos"""
+        from app.core.proveedor_db import fetch_all_proveedores
         self.table_prov.setRowCount(0)
-        for prov in store.proveedores.values():
+        proveedores_lista = fetch_all_proveedores()
+        for prov in proveedores_lista:
             row = self.table_prov.rowCount()
             self.table_prov.insertRow(row)
-            self.table_prov.setItem(row, 0, QTableWidgetItem(prov.nombre_comercial))
-            self.table_prov.setItem(row, 1, QTableWidgetItem(prov.nombre_fiscal))
-            self.table_prov.setItem(row, 2, QTableWidgetItem(prov.ubicacion))
-            self.table_prov.setItem(row, 3, QTableWidgetItem(prov.telefono))
+            self.table_prov.setItem(row, 0, QTableWidgetItem(str(prov['id'])))  # ID
+            self.table_prov.setItem(row, 1, QTableWidgetItem(prov['nombre_comercial']))
+            self.table_prov.setItem(row, 2, QTableWidgetItem(prov['nombre_fiscal']))
+            self.table_prov.setItem(row, 3, QTableWidgetItem(prov['ubicacion']))
+            self.table_prov.setItem(row, 4, QTableWidgetItem(prov['telefono']))
 
     def agregar_proveedor(self, parent_dialog):
         """Abre dialog para agregar proveedor"""
@@ -561,14 +591,8 @@ class ConfiguracionView(QWidget):
             QMessageBox.warning(parent_dialog, "Error", "Seleccione un proveedor")
             return
 
-        nombre_comercial = self.table_prov.item(row, 0).text()
-        # Encontrar el proveedor en el store
-        proveedor = None
-        for prov in store.proveedores.values():
-            if prov.nombre_comercial == nombre_comercial:
-                proveedor = prov
-                break
-
+        prov_id = self.table_prov.item(row, 0).text()
+        proveedor = store.proveedores.get(prov_id)
         if not proveedor:
             QMessageBox.warning(parent_dialog, "Error", "Proveedor no encontrado")
             return
@@ -584,20 +608,17 @@ class ConfiguracionView(QWidget):
             QMessageBox.warning(parent_dialog, "Error", "Seleccione un proveedor")
             return
 
-        nombre_comercial = self.table_prov.item(row, 0).text()
+        prov_id = self.table_prov.item(row, 0).text()
         confirm = QMessageBox.question(
             parent_dialog,
             "Confirmar eliminación",
-            f"¿Eliminar al proveedor {nombre_comercial}?",
+            f"¿Eliminar al proveedor con ID {prov_id}?",
             QMessageBox.Yes | QMessageBox.No
         )
 
         if confirm == QMessageBox.Yes:
-            # Encontrar y eliminar del store
-            for prov_id, prov in list(store.proveedores.items()):
-                if prov.nombre_comercial == nombre_comercial:
-                    store.delete_proveedor(prov_id)
-                    self.cargar_proveedores_tabla()
-                    return
+            if prov_id in store.proveedores:
+                store.delete_proveedor(prov_id)
+                self.cargar_proveedores_tabla()
 
 
