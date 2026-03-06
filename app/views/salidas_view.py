@@ -83,6 +83,9 @@ class SalidasView(QWidget):
         self.load_trabajadores()
         self.load_partidas()
         self.load_salidas()
+        # Actualizar automáticamente cuando cambie el almacén
+        from app.core.event_manager import event_manager
+        event_manager.almacen_changed.connect(self.load_partidas)
 
     # ---------- CARGAS ----------
     def load_trabajadores(self):

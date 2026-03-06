@@ -58,9 +58,9 @@ class StatCard(QFrame):
         self.lbl_valor = QLabel(str(valor))
         self.lbl_valor.setObjectName("StatCardValue")
         self.lbl_valor.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.lbl_valor.setMinimumWidth(80)
+        self.lbl_valor.setFixedWidth(120)
         self.lbl_valor.setStyleSheet(
-            "QLabel { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }"
+            "font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #2563eb;"
         )
         
         title_value_layout.addWidget(self.lbl_titulo)

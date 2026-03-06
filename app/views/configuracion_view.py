@@ -142,19 +142,19 @@ class ConfiguracionView(QWidget):
         )
 
         if reply == QMessageBox.Yes:
-            # Eliminar base de datos
             import os
-            from app.core.database import DB_PATH, init_database
-            
+            from app.core.database import DB_PATH, init_database, _pool
             try:
+                # Cerrar todas las conexiones del pool
+                while not _pool.pool.empty():
+                    conn = _pool.pool.get()
+                    conn.close()
+                # Eliminar base de datos
                 if os.path.exists(DB_PATH):
                     os.remove(DB_PATH)
-                
                 # Reinicializar BD vacía
                 init_database()
-                
                 # Limpiar datos en memoria del store
-                # El almacen no se guarda como atributo, usamos el cache interno
                 if hasattr(store, '_almacen_cache'):
                     store._almacen_cache = None
                 store.entradas.clear()
@@ -163,9 +163,7 @@ class ConfiguracionView(QWidget):
                 store.prestamos.clear()
                 store.trabajadores.clear()
                 store.proveedores.clear()
-                
                 store.notify()
-
                 QMessageBox.information(
                     self,
                     "Listo",

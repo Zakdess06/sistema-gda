@@ -207,7 +207,30 @@ class Store:
             self._subscribers.append(callback)
 
     def notify(self):
-        """Notifica a todos los suscriptores de cambios"""
+        """Notifica a todos los suscriptores de cambios y recarga datos desde la base de datos"""
+        # Recargar datos desde BD
+        self._almacen_cache = None
+        from app.core.entradas_db import fetch_all_entradas
+        from app.core.salidas_db import fetch_all_salidas
+        from app.core.prestamo_db import fetch_all_prestamos
+        from app.core.herramienta_db import fetch_all_herramientas
+        from app.core.proveedor_db import fetch_all_proveedores
+        from app.core.trabajador_db import fetch_all_trabajadores
+        self.entradas = fetch_all_entradas()
+        self.salidas = fetch_all_salidas()
+        self.prestamos = fetch_all_prestamos()
+        self.herramientas = {item.codigo: item for item in fetch_all_herramientas()}
+        # Restaurar trabajadores en memoria
+        if getattr(self, 'trabajadores', None):
+            self.trabajadores = self.trabajadores
+        else:
+            self.trabajadores = {
+                'T001': Trabajador(id='T001', nombre='Juan Pérez'),
+                'T002': Trabajador(id='T002', nombre='María López'),
+                'T003': Trabajador(id='T003', nombre='Carlos Ruiz'),
+            }
+        proveedores_lista = fetch_all_proveedores()
+        self.proveedores = {str(p['id']): Proveedor(id=str(p['id']), nombre_comercial=p['nombre_comercial'], nombre_fiscal=p['nombre_fiscal'], ubicacion=p['ubicacion'], telefono=p['telefono']) for p in proveedores_lista}
         # Método tradicional de observadores
         for cb in self._subscribers:
             cb()
