@@ -13,6 +13,11 @@ $pyinstallerCheck = pip show pyinstaller 2>$null
 if (-not $pyinstallerCheck) {
     Write-Host "📦 Instalando PyInstaller..." -ForegroundColor Yellow
     pip install pyinstaller
+    Write-Host "   - Tamaño: $([Math]::Round($exeSize, 2)) MB"
+    Write-Host "   - Carpeta dist: $distFolder"
+    Write-Host ""
+} else {
+    Write-Host "❌ Error al compilar. Revisa los mensajes arriba." -ForegroundColor Red
 }
 
 # Variables
