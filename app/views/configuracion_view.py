@@ -103,17 +103,10 @@ class ConfiguracionView(QWidget):
         btn_clean_cache.setCursor(Qt.PointingHandCursor)
         btn_clean_cache.clicked.connect(self.limpiar_cache)
 
-        btn_reset = QPushButton("Eliminar todos los datos")
-        btn_reset.setObjectName("DangerButton")
-        btn_reset.setMinimumHeight(40)
-        btn_reset.setCursor(Qt.PointingHandCursor)
-        btn_reset.clicked.connect(self.delete_all_data)
-
         btn_container_layout.addWidget(btn_trabajadores)
         btn_container_layout.addWidget(btn_proveedores)
         btn_container_layout.addWidget(btn_backup)
         btn_container_layout.addWidget(btn_clean_cache)
-        btn_container_layout.addWidget(btn_reset)
         
         main_layout.addLayout(btn_container_layout)
 
@@ -131,49 +124,6 @@ class ConfiguracionView(QWidget):
         footer_layout.addWidget(footer_label)
 
         main_layout.addLayout(footer_layout)
-
-    def delete_all_data(self):
-        reply = QMessageBox.question(
-            self,
-            "Confirmar eliminación",
-            "¿Está seguro de que desea eliminar TODOS los datos?\n\nEsta acción no se puede deshacer.",
-            QMessageBox.Yes | QMessageBox.No
-        )
-
-        if reply == QMessageBox.Yes:
-            import os
-            from app.core.database import DB_PATH, init_database, _pool
-            try:
-                # Cerrar todas las conexiones del pool
-                while not _pool.pool.empty():
-                    conn = _pool.pool.get()
-                    conn.close()
-                # Eliminar base de datos
-                if os.path.exists(DB_PATH):
-                    os.remove(DB_PATH)
-                # Reinicializar BD vacía
-                init_database()
-                # Limpiar datos en memoria del store
-                if hasattr(store, '_almacen_cache'):
-                    store._almacen_cache = None
-                store.entradas.clear()
-                store.salidas.clear()
-                store.herramientas.clear()
-                store.prestamos.clear()
-                store.trabajadores.clear()
-                store.proveedores.clear()
-                store.notify()
-                QMessageBox.information(
-                    self,
-                    "Listo",
-                    "Todos los datos han sido eliminados correctamente"
-                )
-            except Exception as e:
-                QMessageBox.critical(
-                    self,
-                    "Error",
-                    f"Error al eliminar datos: {str(e)}"
-                )
 
     def crear_respaldo(self):
         """Crea un respaldo del archivo de base de datos"""
