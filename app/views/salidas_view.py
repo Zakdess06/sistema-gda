@@ -8,6 +8,8 @@ from datetime import datetime
 
 from app.core.store import store, Salida
 from app.core.bitacora import bitacora
+from app.core.trabajador_db import fetch_all_trabajadores
+from app.models.trabajador import Trabajador
 from app.utils.table_utils import ajustar_ancho_tabla
 class SalidasView(QWidget):
     def __init__(self):
@@ -91,6 +93,17 @@ class SalidasView(QWidget):
 
     # ---------- CARGAS ----------
     def load_trabajadores(self):
+        """Carga trabajadores desde la BD y actualiza el store"""
+        # Actualizar store con datos de BD
+        store.trabajadores.clear()
+        for t in fetch_all_trabajadores():
+            store.trabajadores[t['id']] = Trabajador(
+                id=t['id'], 
+                nombre=t['nombre'], 
+                numero_identificacion=t['identificacion']
+            )
+        
+        # Actualizar combo
         self.cmb_id_trabajador.clear()
         for id_trab, trabajador in store.trabajadores.items():
             self.cmb_id_trabajador.addItem(f"{id_trab} - {trabajador.nombre}", id_trab)
