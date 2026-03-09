@@ -1,3 +1,7 @@
 # Ignorar archivos compilados de Python
 __pycache__/
 *.pyc
+
+# Ignorar carpeta de caché y archivos de base de datos
+cache/
+database.db*

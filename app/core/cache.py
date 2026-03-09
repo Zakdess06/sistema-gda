@@ -53,11 +53,20 @@ class Cache:
             self.store.clear()
     
     def cleanup_expired(self):
-        """Limpia entradas expiradas"""
+        """Limpia entradas expiradas y retorna la cantidad eliminada"""
         with self.lock:
             expired_keys = [k for k, v in self.store.items() if v.is_expired()]
             for key in expired_keys:
                 del self.store[key]
+            return len(expired_keys)
+    
+    def get_stats(self) -> dict:
+        """Retorna estadísticas del caché: cantidad de entradas y tamaño aproximado"""
+        with self.lock:
+            return {
+                'total_entries': len(self.store),
+                'expired_entries': sum(1 for v in self.store.values() if v.is_expired())
+            }
 
 
 # Instancia global del caché

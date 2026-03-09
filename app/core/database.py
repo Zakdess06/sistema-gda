@@ -5,7 +5,10 @@ from threading import Lock
 
 # Ruta de la base de datos
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DB_PATH = BASE_DIR / "database.db"
+DB_PATH = BASE_DIR / "cache" / "database.db"
+
+# Crear carpeta cache si no existe
+DB_PATH.parent.mkdir(exist_ok=True)
 
 # ===== CONNECTION POOL =====
 class ConnectionPool:

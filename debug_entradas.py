@@ -5,7 +5,8 @@ import sqlite3
 from pathlib import Path
 
 # Conectar a la BD
-DB_PATH = Path(__file__).resolve().parent / "database.db"
+DB_PATH = Path(__file__).resolve().parent / "cache" / "database.db"
+DB_PATH.parent.mkdir(exist_ok=True)
 conn = sqlite3.connect(str(DB_PATH))
 cursor = conn.cursor()
 

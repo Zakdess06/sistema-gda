@@ -10,6 +10,7 @@ from PySide6.QtGui import QPixmap
 from app.core.store import store
 from app.core.config import config
 from app.core.event_manager import event_manager
+from app.core.cache import cache
 from app.views.trabajador_dialog import TrabajadorDialog
 from app.views.proveedor_dialog import ProveedorDialog
 from app.utils.table_utils import ajustar_ancho_tabla
@@ -96,6 +97,12 @@ class ConfiguracionView(QWidget):
         btn_backup.setCursor(Qt.PointingHandCursor)
         btn_backup.clicked.connect(self.abrir_administrar_respaldo)
 
+        btn_clean_cache = QPushButton("Limpiar Caché")
+        btn_clean_cache.setObjectName("ActionButton")
+        btn_clean_cache.setMinimumHeight(40)
+        btn_clean_cache.setCursor(Qt.PointingHandCursor)
+        btn_clean_cache.clicked.connect(self.limpiar_cache)
+
         btn_reset = QPushButton("Eliminar todos los datos")
         btn_reset.setObjectName("DangerButton")
         btn_reset.setMinimumHeight(40)
@@ -105,6 +112,7 @@ class ConfiguracionView(QWidget):
         btn_container_layout.addWidget(btn_trabajadores)
         btn_container_layout.addWidget(btn_proveedores)
         btn_container_layout.addWidget(btn_backup)
+        btn_container_layout.addWidget(btn_clean_cache)
         btn_container_layout.addWidget(btn_reset)
         
         main_layout.addLayout(btn_container_layout)
@@ -619,5 +627,36 @@ class ConfiguracionView(QWidget):
             if prov_id in store.proveedores:
                 store.delete_proveedor(prov_id)
                 self.cargar_proveedores_tabla()
+
+    def limpiar_cache(self):
+        """Limpia las entradas expiradas del caché para mejorar el rendimiento"""
+        stats = cache.get_stats()
+        
+        if stats['total_entries'] == 0:
+            QMessageBox.information(
+                self,
+                "Caché Limpio",
+                "El caché está vacío. No hay nada que limpiar."
+            )
+            return
+        
+        reply = QMessageBox.question(
+            self,
+            "Limpiar Caché",
+            f"Esto eliminará las entradas expiradas del caché para mejorar el rendimiento.\n\n"
+            f"Entradas expiradas: {stats['expired_entries']}\n"
+            f"Total de entradas: {stats['total_entries']}\n\n"
+            f"No se eliminarán datos del sistema.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            cleaned = cache.cleanup_expired()
+            QMessageBox.information(
+                self,
+                "Caché Limpio",
+                f"Se limpiaron {cleaned} entradas expiradas del caché.\n"
+                f"El rendimiento del sistema ha mejorado."
+            )
 
 

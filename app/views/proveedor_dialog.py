@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRegularExpression
+from PySide6.QtGui import QRegularExpressionValidator
 
 from app.core.store import store, Proveedor
 from app.core.bitacora import bitacora
@@ -30,6 +31,11 @@ class ProveedorDialog(QDialog):
         self.txt_nombre_fiscal = QLineEdit()
         self.txt_ubicacion = QLineEdit()
         self.txt_telefono = QLineEdit()
+
+        # Validador para teléfono - solo números, máximo 12 dígitos
+        regex_12_digits = QRegularExpression(r"^\d{0,12}$")
+        validator_12 = QRegularExpressionValidator(regex_12_digits)
+        self.txt_telefono.setValidator(validator_12)
 
         # Placeholders
         self.txt_nombre_comercial.setPlaceholderText("Nombre comercial")
