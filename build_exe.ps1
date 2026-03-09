@@ -9,7 +9,12 @@ param(
 Write-Host "🔨 Construyendo Sistema GDA..." -ForegroundColor Cyan
 
 # Verificar si PyInstaller está instalado
-$pyinstallerCheck = pip show pyinstaller 2>$null
+try {
+    $pyinstallerCheck = pip show pyinstaller
+} catch {
+    $pyinstallerCheck = $null
+}
+
 if (-not $pyinstallerCheck) {
     Write-Host "📦 Instalando PyInstaller..." -ForegroundColor Yellow
     pip install pyinstaller
@@ -66,6 +71,7 @@ if (Test-Path (Join-Path $distFolder "Sistema GDA.exe")) {
     Write-Host "   - Tamaño: $([Math]::Round($exeSize, 2)) MB"
     Write-Host "   - Carpeta dist: $distFolder"
     Write-Host ""
-} else {
+}
+else {
     Write-Host "❌ Error al compilar. Revisa los mensajes arriba." -ForegroundColor Red
 }
