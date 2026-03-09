@@ -72,11 +72,9 @@ def main():
     """
     app.setStyleSheet(global_stylesheet)
 
-    # cargar tema guardado 
+    # cargar tema oscuro
     try:
-        from app.core.config import config
-        theme = getattr(config, "theme", "dark")
-        qss_path = "app/styles/dark.qss" if theme == "dark" else "app/styles/light.qss"
+        qss_path = "app/styles/dark.qss"
         try:
             with open(qss_path, "r", encoding="utf-8") as f:
                 # Combinar con el stylesheet global

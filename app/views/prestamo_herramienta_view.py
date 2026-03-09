@@ -150,7 +150,7 @@ class PrestamoHerramientaView(QWidget):
         h_layout6.addWidget(QLabel("Fecha regreso:"))
         self.date_regreso_estimada = QDateTimeEdit()
         self.date_regreso_estimada.setDateTime(QDateTime.currentDateTime())
-        self.date_regreso_estimada.setDisplayFormat("yyyy-MM-dd HH:mm")
+        self.date_regreso_estimada.setDisplayFormat("yyyy-MM-dd")
         self.date_regreso_estimada.setMinimumHeight(36)
         h_layout6.addWidget(self.date_regreso_estimada, 1)
         main_layout.addLayout(h_layout6)
@@ -675,7 +675,7 @@ class PrestamoHerramientaView(QWidget):
         trabajador_solicita_id = self.combo_trabajador_solicita.currentData()
         trabajador_despacha_id = self.combo_trabajador_despacha.currentData()
         estado = self.combo_estado_prestamo.currentText()
-        fecha_regreso = self.date_regreso_estimada.dateTime().toString("yyyy-MM-dd HH:mm")
+        fecha_regreso = self.date_regreso_estimada.dateTime().toString("yyyy-MM-dd")
         cantidad = int(self.spin_cantidad_prestamo.value())
 
         success, message, prestamo_id = self.controller.solicitar_prestamo(

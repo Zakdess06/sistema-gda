@@ -392,6 +392,20 @@ class Store:
             if item.cantidad <= config.stock_minimo
         ]
 
+    def generar_codigo_herramienta(self):
+        """Genera un código único para herramienta con formato H-XXX"""
+        herramientas = self.get_herramientas()  # Obtener directamente de la BD
+        numeros = []
+        for codigo in herramientas.keys():
+            if codigo.startswith('H-'):
+                try:
+                    num = int(codigo.split('-')[-1])
+                    numeros.append(num)
+                except (ValueError, IndexError):
+                    pass
+        siguiente = max(numeros) + 1 if numeros else 1
+        return f"H-{siguiente:03d}"
+
     def generar_codigo_partida(self, proveedor_nombre=None):
         """Genera un código único para partida con formato AAAAMMDD-XXXX-XXX, donde XXXX son las primeras 4 letras del proveedor."""
         from datetime import datetime

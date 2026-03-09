@@ -67,18 +67,6 @@ class ConfiguracionView(QWidget):
         theme_section_layout = QVBoxLayout()
         theme_section_layout.setSpacing(12)
         
-        theme_label = QLabel("Seleccionar tema:")
-        theme_label.setStyleSheet("font-size: 13px; font-weight: 600;")
-        theme_section_layout.addWidget(theme_label)
-
-        self.cmb_tema = QComboBox()
-        self.cmb_tema.addItems(["Oscuro", "Claro"])
-        current_theme = "Oscuro" if getattr(config, "theme", "dark") == "dark" else "Claro"
-        self.cmb_tema.setCurrentText(current_theme)
-        self.cmb_tema.setMinimumHeight(36)
-        self.cmb_tema.currentTextChanged.connect(self.on_theme_changed)
-        theme_section_layout.addWidget(self.cmb_tema)
-        
         main_layout.addLayout(theme_section_layout)
 
         # ===== SECCIÓN DE GESTIÓN =====
@@ -373,25 +361,6 @@ class ConfiguracionView(QWidget):
         btn_cerrar.clicked.connect(dialog.accept)
 
         dialog.exec()
-
-    def on_theme_changed(self, text):
-        # Extraer tema del texto (incluyendo emojis)
-        theme = "dark" if "Oscuro" in text else "light"
-        config.theme = theme
-        try:
-            config.save()
-        except Exception:
-            pass
-
-        # Aplicar estilo si la app está activa
-        app = QApplication.instance()
-        if app:
-            qss_path = "app/styles/dark.qss" if theme == "dark" else "app/styles/light.qss"
-            try:
-                with open(qss_path, "r", encoding="utf-8") as f:
-                    app.setStyleSheet(f.read())
-            except Exception:
-                pass
 
     def abrir_gestor_trabajadores(self):
         """Abre ventana para gestionar trabajadores"""
