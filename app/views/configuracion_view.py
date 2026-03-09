@@ -45,7 +45,7 @@ class ConfiguracionView(QWidget):
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("font-size: 18px; font-weight: 700; letter-spacing: 0.3px;")
 
-        version = QLabel("Versión: Demo 3.4")
+        version = QLabel("Versión: Release 1.0")
         version.setAlignment(Qt.AlignCenter)
         version.setStyleSheet("font-size: 12px; opacity: 0.9;")
 
