@@ -46,10 +46,13 @@ class ReportesView(QWidget):
         layout.addWidget(btn_export)
 
         self.load_preview()
-        # Actualizar automáticamente cuando cambie el almacén o entradas
+        # Actualizar automáticamente cuando cambien los datos
         from app.core.event_manager import event_manager
         event_manager.almacen_changed.connect(self.load_preview)
         event_manager.entrada_added.connect(self.load_preview)
+        event_manager.salida_added.connect(self.load_preview)
+        event_manager.trabajador_changed.connect(self.load_preview)
+        event_manager.data_changed.connect(self.load_preview)
 
     # ---------- PREVIEW ----------
 
