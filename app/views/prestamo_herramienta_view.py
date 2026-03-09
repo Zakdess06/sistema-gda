@@ -607,22 +607,27 @@ class PrestamoHerramientaView(QWidget):
             herramienta = herramientas.get(p.herramienta_codigo, None)
             nombre_herramienta = herramienta.descripcion if herramienta else p.herramienta_codigo
             
-            trabajador = store.trabajadores.get(p.trabajador_solicita_id, None)
-            nombre_trabajador = trabajador.nombre if trabajador else p.trabajador_solicita_id
+            trabajador_solicita = store.trabajadores.get(p.trabajador_solicita_id, None)
+            nombre_solicita = trabajador_solicita.nombre if trabajador_solicita else p.trabajador_solicita_id
             
+            trabajador_despacha = store.trabajadores.get(p.trabajador_despacha_id, None)
+            nombre_despacha = trabajador_despacha.nombre if trabajador_despacha else p.trabajador_despacha_id
+            
+            # Insertar datos en el orden correcto de columnas
             self.table_activos.setItem(row, 0, QTableWidgetItem(str(p.id)))  # ID
-            self.table_activos.setItem(row, 1, QTableWidgetItem(p.herramienta_codigo))
-            self.table_activos.setItem(row, 2, QTableWidgetItem(nombre_herramienta))
-            self.table_activos.setItem(row, 3, QTableWidgetItem(nombre_trabajador))
-            self.table_activos.setItem(row, 4, QTableWidgetItem(p.fecha_prestamo))
-            self.table_activos.setItem(row, 5, QTableWidgetItem(p.fecha_devolucion or ""))
-            self.table_activos.setItem(row, 6, QTableWidgetItem(p.estado))
+            self.table_activos.setItem(row, 1, QTableWidgetItem(nombre_herramienta))  # Herramienta
+            self.table_activos.setItem(row, 2, QTableWidgetItem(nombre_solicita))  # Solicita
+            self.table_activos.setItem(row, 3, QTableWidgetItem(nombre_despacha))  # Despacha
+            self.table_activos.setItem(row, 4, QTableWidgetItem(p.fecha_prestamo))  # Fecha
+            self.table_activos.setItem(row, 5, QTableWidgetItem("Activo"))  # Estado
 
             # resaltar si está vencido
             try:
                 from app.controllers.prestamo_herramienta_controller import PrestamoHerramientaController
                 vencidos = [v.id for v in PrestamoHerramientaController.listar_prestamos_vencidos()]
                 if p.id in vencidos:
+                    # Cambiar el estado a "Vencido"
+                    self.table_activos.item(row, 5).setText("Vencido")
                     for col in range(self.table_activos.columnCount()):
                         it = self.table_activos.item(row, col)
                         if it:

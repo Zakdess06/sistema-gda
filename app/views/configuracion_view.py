@@ -9,6 +9,7 @@ from PySide6.QtGui import QPixmap
 
 from app.core.store import store
 from app.core.config import config
+from app.core.event_manager import event_manager
 from app.views.trabajador_dialog import TrabajadorDialog
 from app.views.proveedor_dialog import ProveedorDialog
 from app.utils.table_utils import ajustar_ancho_tabla
@@ -446,6 +447,9 @@ class ConfiguracionView(QWidget):
 
         # Cargar trabajadores
         self.cargar_trabajadores_tabla()
+        
+        # Conectar evento para recargar en tiempo real
+        event_manager.trabajador_changed.connect(self.cargar_trabajadores_tabla)
 
         dialog.exec()
 
@@ -478,13 +482,10 @@ class ConfiguracionView(QWidget):
             QMessageBox.warning(parent_dialog, "Error", "Seleccione un trabajador")
             return
 
-        nombre = self.table.item(row, 0).text()
+        # Obtener el ID del trabajador desde la columna 0
+        id_trabajador = self.table.item(row, 0).text()
         # Encontrar el trabajador en el store
-        trabajador = None
-        for trab in store.trabajadores.values():
-            if trab.nombre == nombre:
-                trabajador = trab
-                break
+        trabajador = store.trabajadores.get(id_trabajador)
 
         if not trabajador:
             QMessageBox.warning(parent_dialog, "Error", "Trabajador no encontrado")

@@ -5,7 +5,8 @@ from PySide6.QtCore import Qt
 
 from app.core.store import store, Trabajador
 from app.core.bitacora import bitacora
-from app.core.trabajador_db import insert_trabajador
+from app.core.event_manager import event_manager
+from app.core.trabajador_db import insert_trabajador, update_trabajador
 
 
 class TrabajadorDialog(QDialog):
@@ -38,7 +39,6 @@ class TrabajadorDialog(QDialog):
         if trabajador:
             self.txt_nombre.setText(trabajador.nombre)
             self.txt_identificacion.setText(trabajador.numero_identificacion)
-            self.txt_identificacion.setReadOnly(True)  # No permitir cambiar identificación
 
         layout.addRow("Nombre:", self.txt_nombre)
         layout.addRow("Identificación:", self.txt_identificacion)
@@ -68,10 +68,22 @@ class TrabajadorDialog(QDialog):
 
         if self.trabajador:
             # Edición: actualizar trabajador existente
+            # Verificar que la identificación no esté duplicada (a menos que sea la misma)
+            for trab in store.trabajadores.values():
+                if (trab.numero_identificacion == identificacion and 
+                    trab.id != self.trabajador.id):
+                    QMessageBox.warning(self, "Error", f"La identificación {identificacion} ya existe")
+                    return
+            
             self.trabajador.nombre = nombre
-            # No se actualiza identificación en edición
+            self.trabajador.numero_identificacion = identificacion
+            # Guardar en la base de datos
+            update_trabajador(self.trabajador.id, nombre, identificacion)
             bitacora.log("Trabajador", f"Trabajador actualizado: {nombre}")
             QMessageBox.information(self, "OK", "Trabajador actualizado")
+            # Notificar cambios en tiempo real
+            event_manager.trabajador_changed.emit()
+            store.notify()
         else:
             # Creación: nuevo trabajador
             # Verificar que no exista la identificación
@@ -101,6 +113,9 @@ class TrabajadorDialog(QDialog):
                 insert_trabajador(nombre, identificacion)
                 bitacora.log("Trabajador", f"Trabajador registrado: {nombre}")
                 QMessageBox.information(self, "OK", "Trabajador registrado")
+                # Notificar cambios en tiempo real
+                event_manager.trabajador_changed.emit()
+                store.notify()
             except Exception as e:
                 QMessageBox.critical(self, "Error", str(e))
                 return
