@@ -36,7 +36,8 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='resources\\icon-app.ico',
+    icon='resources\\logogda2.ico',
+    manifest='resources\\manifest.xml',
 )
 
 coll = COLLECT(

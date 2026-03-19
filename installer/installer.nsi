@@ -10,8 +10,8 @@ Unicode true
 RequestExecutionLevel admin
 
 ; Configuración del Instalador
-Name "Sistema GDA v1.0.0"
-OutFile "Sistema_GDA_v1.0.0_Instalador.exe"
+Name "Sistema GDA v1.1.0"
+OutFile "Sistema_GDA_v1.0.1_Instalador.exe"
 InstallDir "$PROGRAMFILES\SistemaGDA"
 InstallDirRegKey HKCU "Software\SistemaGDA" "Install_Dir"
 

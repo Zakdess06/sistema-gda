@@ -32,8 +32,29 @@ if (Test-Path ".\dist\Sistema GDA.exe") {
     $exeSize = [Math]::Round((Get-Item ".\dist\Sistema GDA.exe").Length / 1MB, 2)
     Write-Host "Tamano: $exeSize MB" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "Ahora ejecuta el instalador NSIS:" -ForegroundColor Yellow
-    Write-Host "& `"C:\Program Files (x86)\NSIS\makensis.exe`" installer\installer.nsi" -ForegroundColor Cyan
+    
+    # Generar instalador NSIS automáticamente
+    Write-Host "Generando instalador NSIS..." -ForegroundColor Cyan
+    $nsisPath = "C:\Program Files (x86)\NSIS\makensis.exe"
+    
+    if (Test-Path $nsisPath) {
+        & $nsisPath installer\installer.nsi
+        
+        if (Test-Path ".\installer\Sistema_GDA_v1.1.0_Instalador.exe") {
+            Write-Host ""
+            Write-Host "EXITO COMPLETO! Instalador listo:" -ForegroundColor Green
+            Write-Host "Ubicacion: .\installer\Sistema_GDA_v1.1.0_Instalador.exe" -ForegroundColor Cyan
+            $installerSize = [Math]::Round((Get-Item ".\installer\Sistema_GDA_v1.1.0_Instalador.exe").Length / 1MB, 2)
+            Write-Host "Tamano: $installerSize MB" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "Tu programa esta listo para distribuir!" -ForegroundColor Green
+        } else {
+            Write-Host "Error al generar el instalador NSIS." -ForegroundColor Red
+        }
+    } else {
+        Write-Host "NSIS no encontrado en: $nsisPath" -ForegroundColor Yellow
+        Write-Host "Instala NSIS desde: https://nsis.sourceforge.io/" -ForegroundColor Yellow
+    }
 }
 else {
     Write-Host "Error al compilar. Revisa los mensajes arriba." -ForegroundColor Red

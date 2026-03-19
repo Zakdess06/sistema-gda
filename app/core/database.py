@@ -1,14 +1,34 @@
 import sqlite3
+import sys
+import os
 from pathlib import Path
 from queue import Queue
 from threading import Lock
 
-# Ruta de la base de datos
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DB_PATH = BASE_DIR / "cache" / "database.db"
+# Determinar ruta de la base de datos según contexto
+def get_db_path():
+    """
+    Obtiene la ruta apropiada para la base de datos según si está empaquetada o en desarrollo
+    """
+    if getattr(sys, 'frozen', False):
+        # Cuando está empaquetado con PyInstaller, usar una ruta escribible del sistema
+        if sys.platform == 'win32':
+            # En Windows: usar APPDATA (C:\Users\username\AppData\Local\Sistema GDA)
+            app_data = Path(os.environ.get('APPDATA', os.path.expanduser('~')))
+            db_dir = app_data / "Sistema GDA" / "data"
+        else:
+            # En Linux/Mac: usar ~/.config/sistema_gda
+            db_dir = Path.home() / ".config" / "sistema_gda"
+    else:
+        # En desarrollo: usar la carpeta "./cache" del proyecto
+        db_dir = Path(__file__).resolve().parent.parent.parent / "cache"
+    
+    # Crear directorio si no existe
+    db_dir.mkdir(parents=True, exist_ok=True)
+    
+    return db_dir / "database.db"
 
-# Crear carpeta cache si no existe
-DB_PATH.parent.mkdir(exist_ok=True)
+DB_PATH = get_db_path()
 
 # ===== CONNECTION POOL =====
 class ConnectionPool:
