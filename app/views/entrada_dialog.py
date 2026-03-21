@@ -23,6 +23,12 @@ class EntradaDialog(QDialog):
         else:
             self.setWindowTitle("Nueva Entrada")
 
+        self.setModal(True)
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.raise_()
+        self.activateWindow()
+
         self.setMinimumWidth(550)
         self.setMinimumHeight(550)
 
@@ -126,6 +132,26 @@ class EntradaDialog(QDialog):
         self.btn_guardar.clicked.connect(self.guardar)
         self.btn_cancelar.clicked.connect(self.reject)
 
+    def show_warning(self, title, text):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setWindowModality(Qt.ApplicationModal)
+        msg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        msg.exec()
+
+    def show_info(self, title, text):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setWindowModality(Qt.ApplicationModal)
+        msg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        msg.exec()
+
     def load_proveedores(self):
         """Carga los proveedores registrados en la BD"""
         self.cmb_proveedor.clear()
@@ -161,11 +187,11 @@ class EntradaDialog(QDialog):
         obs = self.txt_obs.text().strip()
 
         if not descripcion or not cantidad or not unidad or not ubicacion:
-            QMessageBox.warning(self, "Error", "Complete los campos obligatorios")
+            self.show_warning("Error", "Complete los campos obligatorios")
             return
 
         if stock_minimo <= 0:
-            QMessageBox.warning(self, "Error", "Stock Mínimo debe ser mayor a 0")
+            self.show_warning("Error", "Stock Mínimo debe ser mayor a 0")
             return
 
         try:
@@ -204,7 +230,7 @@ class EntradaDialog(QDialog):
                 bitacora.log("Almacén", f"Producto actualizado: {self.entrada.partida} - {cantidad} {unidad}")
                 store.notify()  # Notificar cambios y recargar desde BD
                 event_manager.notify_entrada_add()  # Notificar cambios
-                QMessageBox.information(self, "Éxito", "Producto actualizado correctamente")
+                self.show_info("Éxito", "Producto actualizado correctamente")
             else:
                 # Creación: generar partida automáticamente y crear entrada auditada
                 from datetime import datetime
@@ -233,10 +259,17 @@ class EntradaDialog(QDialog):
                 bitacora.log("Almacén", f"Entrada registrada: {partida} ({descripcion}) - {cantidad} {unidad} | Proveedor: {proveedor} | Recibió: {recibio}")
                 store.notify()  # Notificar cambios y recargar datos desde BD
                 event_manager.notify_entrada_add()  # Notificar cambios para actualizar dashboard
-                QMessageBox.information(self, "Éxito", f"Producto registrado: {partida}")
+                self.show_info("Éxito", f"Producto registrado: {partida}")
 
         except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Error")
+            msg.setText(str(e))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setWindowModality(Qt.ApplicationModal)
+            msg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+            msg.exec()
             return
 
         self.accept()

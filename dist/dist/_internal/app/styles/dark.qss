@@ -360,6 +360,35 @@ QDialog {
     background-color: #0a0e11;
 }
 
+/* Estilos de cajas de mensajes para Windows 10: que se vean los botones sí/no */
+QMessageBox {
+    background-color: #0a0e11;
+    color: #f0f4f8;
+    border: 1px solid #1f2937;
+}
+
+QMessageBox QLabel {
+    color: #f0f4f8;
+}
+
+QMessageBox QPushButton {
+    background-color: #1f2937;
+    color: #f0f4f8;
+    border: 1px solid #374151;
+    min-width: 80px;
+    min-height: 28px;
+    border-radius: 6px;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: #1e40af;
+}
+
 /* ===== LABELS ===== */
 QLabel {
     color: #f0f4f8;

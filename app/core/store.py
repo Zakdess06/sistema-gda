@@ -213,7 +213,18 @@ class Store:
 
     def delete_proveedor(self, proveedor_id: str):
         from app.core.proveedor_db import delete_proveedor, fetch_all_proveedores
-        delete_proveedor(proveedor_id)
+        from app.core.database import get_connection, return_connection
+
+        if proveedor_id in (None, "", "None"):
+            # Eliminar entradas inválidas/no identificadas de proveedores
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM proveedores WHERE id IS NULL OR id = '' OR id = 'None'")
+            conn.commit()
+            return_connection(conn)
+        else:
+            delete_proveedor(proveedor_id)
+
         # Recargar todos los proveedores desde la base de datos para reflejar correctamente los cambios
         proveedores_lista = fetch_all_proveedores()
         self.proveedores = {str(p['id']): Proveedor(id=str(p['id']), nombre_comercial=p['nombre_comercial'], nombre_fiscal=p['nombre_fiscal'], ubicacion=p['ubicacion'], telefono=p['telefono']) for p in proveedores_lista}

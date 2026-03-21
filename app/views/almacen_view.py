@@ -29,9 +29,94 @@ class AlmacenView(QWidget):
         btn_layout = QHBoxLayout()
 
         self.btn_add = QPushButton("+ Agregar Producto")
+        self.btn_add.setMinimumHeight(40)
+        self.btn_add.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
+        
         self.btn_restock = QPushButton("Hacer Restock")
+        self.btn_restock.setMinimumHeight(40)
+        self.btn_restock.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
         self.btn_edit = QPushButton("Editar Seleccionado")
+        self.btn_edit.setMinimumHeight(40)
+        self.btn_edit.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
         self.btn_delete = QPushButton("Eliminar Seleccionado")
+        self.btn_delete.setMinimumHeight(40)
+        self.btn_delete.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
 
         btn_layout.addWidget(self.btn_add)
         btn_layout.addWidget(self.btn_restock)
@@ -71,10 +156,19 @@ class AlmacenView(QWidget):
         self.btn_delete.clicked.connect(self.delete_selected)
 
         # escuchar cambios del store
-        store.subscribe(self.load_data)
         event_manager.almacen_changed.connect(self.load_data)
 
         self.load_data()
+
+    def show_warning(self, title, text):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setWindowModality(Qt.ApplicationModal)
+        msg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        msg.exec()
 
     # ===================== DATA =====================
 
@@ -108,7 +202,7 @@ class AlmacenView(QWidget):
     def restock_selected(self):
         selected = self.table.currentRow()
         if selected < 0:
-            QMessageBox.warning(self, "Error", "Seleccione un producto para hacer restock")
+            self.show_warning("Error", "Seleccione un producto para hacer restock")
             return
         partida = self.table.item(selected, 2).text()  # Columna 2 es la partida
         almacen = store.get_almacen()
@@ -146,7 +240,7 @@ class AlmacenView(QWidget):
     def edit_selected(self):
         selected = self.table.currentRow()
         if selected < 0:
-            QMessageBox.warning(self, "Error", "Seleccione un producto para editar")
+            self.show_warning("Error", "Seleccione un producto para editar")
             return
         producto_id = self.table.item(selected, 0).text()
         almacen = store.get_almacen()
@@ -169,31 +263,25 @@ class AlmacenView(QWidget):
             self.load_data()  # Refrescar la tabla inmediatamente
 
     def delete_selected(self):
-        selected = self.table.currentRow()
-        if selected < 0:
-            QMessageBox.warning(self, "Error", "Seleccione un producto para eliminar")
+        selected_rows = self.table.selectionModel().selectedRows()
+        if not selected_rows:
+            self.show_warning("Error", "Seleccione un producto para eliminar")
             return
+
+        selected = selected_rows[0].row()
         producto_id = self.table.item(selected, 0).text()
-        almacen = store.get_almacen()
-        producto = None
-        for item in almacen.values():
-            if str(item.id) == producto_id:
-                producto = item
-                break
-        if not producto:
-            QMessageBox.warning(self, "Error", "Producto no encontrado")
-            return
-        confirm = QMessageBox.question(
-            self,
-            "Confirmar eliminación",
-            f"¿Eliminar el producto con ID {producto_id}?\n\nEsta acción no se puede deshacer.",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if confirm == QMessageBox.Yes:
+        partida = self.table.item(selected, 2).text()
+        descripcion = self.table.item(selected, 3).text()
+        
+        # Mostrar ventana de confirmación
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle("Confirmar eliminación")
+        msg_box.setText(f"¿Está seguro de que desea eliminar el producto?\n\nPartida: {partida}\nDescripción: {descripcion}")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        
+        if msg_box.exec() == QMessageBox.Yes:
+            # Aquí eliminamos directamente sin validaciones extras
             store.delete_producto(producto_id)
             bitacora.log("Almacén", f"Producto eliminado: {producto_id}")
-            self.load_data()  # Refrescar la tabla inmediatamente
-
-    def showEvent(self, event):
-        self.load_data()
-        super().showEvent(event)

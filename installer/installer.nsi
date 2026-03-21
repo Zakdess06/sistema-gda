@@ -11,7 +11,7 @@ RequestExecutionLevel admin
 
 ; Configuración del Instalador
 Name "Sistema GDA v1.1.0"
-OutFile "Sistema_GDA_v1.0.1_Instalador.exe"
+OutFile "Sistema_GDA_v1.1.0_Instalador.exe"
 InstallDir "$PROGRAMFILES\SistemaGDA"
 InstallDirRegKey HKCU "Software\SistemaGDA" "Install_Dir"
 
@@ -83,6 +83,11 @@ Section "Uninstall"
   Delete "$INSTDIR\Sistema GDA.exe"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
+
+  ; Eliminar datos persistentes (cache, backups, DB) en APPDATA
+  RMDir /r "$APPDATA\SistemaGDA\cache"
+  RMDir /r "$APPDATA\SistemaGDA\backups"
+  RMDir /r "$APPDATA\SistemaGDA"
   
   ; Limpiar registry
   DeleteRegKey HKCU "Software\SistemaGDA"

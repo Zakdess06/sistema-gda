@@ -18,8 +18,71 @@ class EntradasView(QWidget):
         # ========= BOTONES =========
         btn_layout = QHBoxLayout()
         self.btn_agregar = QPushButton("+ Agregar Producto")
+        self.btn_agregar.setMinimumHeight(40)
+        self.btn_agregar.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
+        
         self.btn_editar = QPushButton("✎ Editar Seleccionado")
+        self.btn_editar.setMinimumHeight(40)
+        self.btn_editar.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
         self.btn_eliminar = QPushButton("✕ Eliminar Seleccionado")
+        self.btn_eliminar.setMinimumHeight(40)
+        self.btn_eliminar.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
         
         btn_layout.addWidget(self.btn_agregar)
         btn_layout.addWidget(self.btn_editar)
@@ -42,6 +105,8 @@ class EntradasView(QWidget):
             4: 150,     # Proveedor
             5: 200      # Ubicación (se estira)
         })
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         layout.addWidget(self.table)
@@ -57,11 +122,22 @@ class EntradasView(QWidget):
         event_manager.data_changed.connect(self.load_entradas)
         self.load_entradas()
 
+    def show_warning(self, title, text):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setWindowModality(Qt.ApplicationModal)
+        msg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        msg.exec()
+
     def selected_partida(self):
         """Obtiene la partida de la entrada seleccionada"""
-        row = self.table.currentRow()
-        if row < 0:
+        selected_rows = self.table.selectionModel().selectedRows()
+        if not selected_rows:
             return None
+        row = selected_rows[0].row()
         return self.table.item(row, 0).text()
 
     # ---------- CARGAS ----------
@@ -93,7 +169,7 @@ class EntradasView(QWidget):
     def editar(self):
         partida = self.selected_partida()
         if not partida:
-            QMessageBox.warning(self, "Error", "Seleccione una entrada")
+            self.show_warning("Error", "Seleccione una entrada")
             return
         
         from app.core.entradas_db import fetch_all_entradas
@@ -105,7 +181,7 @@ class EntradasView(QWidget):
                 break
         
         if not entrada:
-            QMessageBox.warning(self, "Error", "Entrada no encontrada")
+            self.show_warning("Error", "Entrada no encontrada")
             return
         
         dialog = EntradaDialog(self, entrada)
@@ -115,7 +191,7 @@ class EntradasView(QWidget):
     def eliminar(self):
         partida = self.selected_partida()
         if not partida:
-            QMessageBox.warning(self, "Error", "Seleccione una entrada")
+            self.show_warning("Error", "Seleccione una entrada")
             return
         
         confirm = QMessageBox.question(

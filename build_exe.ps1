@@ -40,11 +40,11 @@ if (Test-Path ".\dist\Sistema GDA.exe") {
     if (Test-Path $nsisPath) {
         & $nsisPath installer\installer.nsi
         
-        if (Test-Path ".\installer\Sistema_GDA_v1.1.0_Instalador.exe") {
+        if (Test-Path ".\installer\Sistema_GDA_v1.0.3_Instalador.exe") {
             Write-Host ""
             Write-Host "EXITO COMPLETO! Instalador listo:" -ForegroundColor Green
-            Write-Host "Ubicacion: .\installer\Sistema_GDA_v1.1.0_Instalador.exe" -ForegroundColor Cyan
-            $installerSize = [Math]::Round((Get-Item ".\installer\Sistema_GDA_v1.1.0_Instalador.exe").Length / 1MB, 2)
+            Write-Host "Ubicacion: .\installer\Sistema_GDA_v1.0.3_Instalador.exe" -ForegroundColor Cyan
+            $installerSize = [Math]::Round((Get-Item ".\installer\Sistema_GDA_v1.0.3_Instalador.exe").Length / 1MB, 2)
             Write-Host "Tamano: $installerSize MB" -ForegroundColor Yellow
             Write-Host ""
             Write-Host "Tu programa esta listo para distribuir!" -ForegroundColor Green

@@ -24,6 +24,13 @@ class ProductoDialog(QDialog):
         else:
             self.setWindowTitle("Agregar Producto")
 
+        # Asegurar que el diálogo sea modal y se muestre encima en Windows
+        self.setModal(True)
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.raise_()
+        self.activateWindow()
+
         self.setMinimumWidth(450)
 
         layout = QFormLayout(self)

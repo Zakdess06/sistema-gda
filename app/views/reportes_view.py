@@ -42,6 +42,26 @@ class ReportesView(QWidget):
         layout.addWidget(self.table)
 
         btn_export = QPushButton("Exportar a Excel")
+        btn_export.setMinimumHeight(40)
+        btn_export.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 120px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
         btn_export.clicked.connect(self.exportar)
         layout.addWidget(btn_export)
 

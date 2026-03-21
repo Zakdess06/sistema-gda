@@ -28,6 +28,30 @@ class PrestamoHerramientaView(QWidget):
 
         # ===== TABS =====
         self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #1f2937;
+            }
+            QTabBar::tab {
+                min-height: 36px;
+                padding: 8px 20px;
+                background-color: #0f1419;
+                color: #9ca3af;
+                border: 1px solid #1f2937;
+                margin-right: 2px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QTabBar::tab:selected {
+                background-color: #2563eb;
+                color: white;
+                border: 1px solid #2563eb;
+            }
+            QTabBar::tab:hover {
+                background-color: #161d26;
+                color: #f0f4f8;
+            }
+        """)
         layout.addWidget(self.tabs)
 
         # Tab 1: Solicitar Préstamo
@@ -171,9 +195,27 @@ class PrestamoHerramientaView(QWidget):
 
         # Botón
         self.btn_solicitar = QPushButton("Crear Préstamo")
-        self.btn_solicitar.setMinimumHeight(38)
+        self.btn_solicitar.setMinimumHeight(40)
         self.btn_solicitar.setMaximumWidth(200)
-        self.btn_solicitar.setStyleSheet("font-weight:600; font-size:12px;")
+        self.btn_solicitar.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 120px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
         self.btn_solicitar.clicked.connect(self.solicitar_prestamo)
         main_layout.addWidget(self.btn_solicitar)
         main_layout.addSpacing(10)
@@ -339,9 +381,27 @@ class PrestamoHerramientaView(QWidget):
 
         # Botón
         self.btn_devolver = QPushButton("Registrar Devolución")
-        self.btn_devolver.setMinimumHeight(38)
+        self.btn_devolver.setMinimumHeight(40)
         self.btn_devolver.setMaximumWidth(200)
-        self.btn_devolver.setStyleSheet("font-weight:600; font-size:12px;")
+        self.btn_devolver.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 120px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
         self.btn_devolver.clicked.connect(self.registrar_devolucion)
         main_layout.addWidget(self.btn_devolver)
 

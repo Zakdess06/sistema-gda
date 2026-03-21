@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
+    QDialog, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox
 )
 from PySide6.QtCore import Qt
 
@@ -24,8 +24,12 @@ class TrabajadorDialog(QDialog):
 
         self.setMinimumWidth(450)
 
-        layout = QFormLayout(self)
-        layout.setSpacing(16)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(18, 18, 18, 18)
+        main_layout.setSpacing(12)
+
+        form_layout = QFormLayout()
+        form_layout.setSpacing(14)
 
         # ----- CAMPOS PRINCIPALES -----
         self.txt_nombre = QLineEdit()
@@ -40,19 +44,27 @@ class TrabajadorDialog(QDialog):
             self.txt_nombre.setText(trabajador.nombre)
             self.txt_identificacion.setText(trabajador.numero_identificacion)
 
-        layout.addRow("Nombre:", self.txt_nombre)
-        layout.addRow("Identificación:", self.txt_identificacion)
+        form_layout.addRow("Nombre:", self.txt_nombre)
+        form_layout.addRow("Identificación:", self.txt_identificacion)
+
+        main_layout.addLayout(form_layout)
 
         # ----- BOTONES -----
         btn_layout = QHBoxLayout()
         self.btn_guardar = QPushButton("Guardar")
         self.btn_cancelar = QPushButton("Cancelar")
+        self.btn_guardar.setObjectName("PrimaryButton")
+        self.btn_cancelar.setObjectName("DangerButton")
+        self.btn_guardar.setMinimumHeight(38)
+        self.btn_cancelar.setMinimumHeight(38)
+        self.btn_guardar.setFixedWidth(110)
+        self.btn_cancelar.setFixedWidth(110)
 
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_guardar)
         btn_layout.addWidget(self.btn_cancelar)
 
-        layout.addRow(btn_layout)
+        main_layout.addLayout(btn_layout)
 
         # ----- CONEXIONES -----
         self.btn_guardar.clicked.connect(self.guardar)

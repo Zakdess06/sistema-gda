@@ -56,6 +56,26 @@ class SalidasView(QWidget):
         # ===== BOTÓN =====
         btn_layout = QHBoxLayout()
         self.btn_salida = QPushButton("Registrar salida")
+        self.btn_salida.setMinimumHeight(40)
+        self.btn_salida.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 120px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_salida)
         layout.addLayout(btn_layout)

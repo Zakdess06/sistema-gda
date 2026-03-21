@@ -272,6 +272,9 @@ class DashboardView(QWidget):
                 salidas_actuales,
                 n_top=5
             )
-            self.graph_top_productos.plot_productos_top(top_productos)
+            # Filtrar solo productos que existen actualmente en almacén
+            current_descriptions = {item.descripcion for item in almacen.values()}
+            filtered_top = [p for p in top_productos if p[0] in current_descriptions]
+            self.graph_top_productos.plot_productos_top(filtered_top)
         except Exception as e:
             print(f"Error actualizando gráficos: {e}")

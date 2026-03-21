@@ -78,6 +78,81 @@ def return_connection(conn):
     _pool.return_connection(conn)
 
 
+def reset_connection_pool():
+    """Cierra todas las conexiones y recrea el pool (necesario después de restaurar BD)"""
+    global _pool
+    import time
+    
+    # Cerrar todas las conexiones existentes
+    cerradas = 0
+    try:
+        while True:
+            try:
+                conn = _pool.pool.get_nowait()
+                try:
+                    conn.close()
+                    cerradas += 1
+                except:
+                    pass
+            except:
+                break
+    except:
+        pass
+    
+    # Esperar un poco para asegurar que todas se cerraron
+    time.sleep(0.5)
+    
+    # Recrear el pool con nuevas conexiones
+    _pool = ConnectionPool()
+    
+    # Forzar vacuum en la BD para limpiar WAL y cachés
+    try:
+        conn = get_connection()
+        conn.execute("PRAGMA cache_clear")  # Limpiar caché de una conexión
+        conn.execute("PRAGMA temp_store=OFF")
+        return_connection(conn)
+    except:
+        pass
+
+
+def clear_all_data():
+    """Elimina todos los datos de todas las tablas (excepto bitacora si se quiere preservar)"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Desactivar foreign keys temporalmente
+        cursor.execute("PRAGMA foreign_keys = OFF")
+        
+        # Limpiar todas las tablas
+        tables_to_clear = [
+            'productos',
+            'herramientas', 
+            'prestamos',
+            'trabajadores',
+            'proveedores',
+            'entradas_auditoria',
+            'salidas',
+            'bitacora'  # Opcional: mantener o limpiar
+        ]
+        
+        for table in tables_to_clear:
+            cursor.execute(f"DELETE FROM {table}")
+            # Resetear autoincrement
+            cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}'")
+        
+        # Reactivar foreign keys
+        cursor.execute("PRAGMA foreign_keys = ON")
+        
+        conn.commit()
+        
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        return_connection(conn)
+
+
 def init_database():
     """Crea las tablas principales si no existen"""
     conn = get_connection()

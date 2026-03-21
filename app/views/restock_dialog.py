@@ -15,6 +15,11 @@ class RestockDialog(QDialog):
 
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setWindowTitle("Hacer Restock")
+        self.setModal(True)
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.raise_()
+        self.activateWindow()
         self.setMinimumWidth(400)
 
         self.producto = producto

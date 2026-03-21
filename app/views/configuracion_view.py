@@ -45,7 +45,7 @@ class ConfiguracionView(QWidget):
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("font-size: 18px; font-weight: 700; letter-spacing: 0.3px;")
 
-        version = QLabel("Release 1.0")
+        version = QLabel("Release 1.1.0")
         version.setAlignment(Qt.AlignCenter)
         version.setStyleSheet("font-size: 12px; opacity: 0.9;")
 
@@ -80,26 +80,102 @@ class ConfiguracionView(QWidget):
         btn_container_layout.setSpacing(10)
 
         btn_trabajadores = QPushButton("Gestionar Trabajadores")
-        btn_trabajadores.setObjectName("ActionButton")
         btn_trabajadores.setMinimumHeight(40)
+        btn_trabajadores.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
         btn_trabajadores.setCursor(Qt.PointingHandCursor)
         btn_trabajadores.clicked.connect(self.abrir_gestor_trabajadores)
 
         btn_proveedores = QPushButton("Gestionar Proveedores")
-        btn_proveedores.setObjectName("ActionButton")
         btn_proveedores.setMinimumHeight(40)
+        btn_proveedores.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
         btn_proveedores.setCursor(Qt.PointingHandCursor)
         btn_proveedores.clicked.connect(self.abrir_gestor_proveedores)
 
         btn_backup = QPushButton("Respaldos del sistema")
-        btn_backup.setObjectName("ActionButton")
         btn_backup.setMinimumHeight(40)
+        btn_backup.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
         btn_backup.setCursor(Qt.PointingHandCursor)
         btn_backup.clicked.connect(self.abrir_administrar_respaldo)
 
         btn_clean_cache = QPushButton("Limpiar Caché")
-        btn_clean_cache.setObjectName("ActionButton")
         btn_clean_cache.setMinimumHeight(40)
+        btn_clean_cache.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
         btn_clean_cache.setCursor(Qt.PointingHandCursor)
         btn_clean_cache.clicked.connect(self.limpiar_cache)
 
@@ -109,6 +185,42 @@ class ConfiguracionView(QWidget):
         btn_container_layout.addWidget(btn_clean_cache)
         
         main_layout.addLayout(btn_container_layout)
+
+        # ===== GESTIÓN DE DATOS =====
+        data_label = QLabel("Gestión de datos:")
+        data_label.setStyleSheet("font-size: 13px; font-weight: 600; margin-top: 20px;")
+        main_layout.addWidget(data_label)
+
+        data_btn_layout = QVBoxLayout()
+        data_btn_layout.setSpacing(10)
+
+        btn_delete_all = QPushButton("Eliminar todos los datos")
+        btn_delete_all.setMinimumHeight(40)
+        btn_delete_all.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
+        btn_delete_all.setCursor(Qt.PointingHandCursor)
+        btn_delete_all.clicked.connect(self.eliminar_todos_datos)
+
+        data_btn_layout.addWidget(btn_delete_all)
+        
+        main_layout.addLayout(data_btn_layout)
 
         # ===== ESPACIO VACÍO =====
         main_layout.addStretch()
@@ -211,19 +323,117 @@ class ConfiguracionView(QWidget):
         btn_layout.setSpacing(10)
 
         btn_crear = QPushButton("Crear respaldo")
+        btn_crear.setMinimumHeight(36)
+        btn_crear.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
+        
         btn_restaurar = QPushButton("Restaurar")
+        btn_restaurar.setMinimumHeight(36)
+        btn_restaurar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
         btn_descargar = QPushButton("Descargar")
+        btn_descargar.setMinimumHeight(36)
+        btn_descargar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
         btn_eliminar = QPushButton("Eliminar")
+        btn_eliminar.setMinimumHeight(36)
+        btn_eliminar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
+        
         btn_cerrar = QPushButton("Cerrar")
-
-        btn_crear.setObjectName("PrimaryButton")
-        btn_restaurar.setObjectName("ActionButton")
-        btn_descargar.setObjectName("ActionButton")
-        btn_eliminar.setObjectName("DangerButton")
-        btn_cerrar.setObjectName("ActionButton")
-
-        for btn in (btn_crear, btn_restaurar, btn_descargar, btn_eliminar, btn_cerrar):
-            btn.setMinimumHeight(36)
+        btn_cerrar.setMinimumHeight(36)
+        btn_cerrar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
 
         btn_layout.addWidget(btn_crear)
         btn_layout.addWidget(btn_restaurar)
@@ -253,11 +463,47 @@ class ConfiguracionView(QWidget):
                 backup_dir = os.path.join(str(DB_PATH).replace("database.db", ""), "backups")
                 src = os.path.join(backup_dir, item.text())
                 try:
+                    from app.core.database import reset_connection_pool
+                    from app.core.cache import cache
+                    import time
+                    
+                    # Paso 1: Resetear el connection pool (cierra todas las conexiones)
+                    reset_connection_pool()
+                    
+                    # Paso 2: Esperar a que se liberen todas las conexiones
+                    time.sleep(1)
+                    
+                    # Paso 3: Copiar el archivo de respaldo sobre la BD actual
                     shutil.copy2(src, DB_PATH)
+                    
+                    # Paso 4: Limpiar archivos WAL si existen (caché de SQLite)
+                    wal_path = str(DB_PATH) + "-wal"
+                    shm_path = str(DB_PATH) + "-shm"
+                    if os.path.exists(wal_path):
+                        try:
+                            os.remove(wal_path)
+                        except:
+                            pass
+                    if os.path.exists(shm_path):
+                        try:
+                            os.remove(shm_path)
+                        except:
+                            pass
+                    
+                    # Paso 5: Resetear el pool NUEVAMENTE después de copiar
+                    reset_connection_pool()
+                    
+                    # Paso 6: Limpiar caché global
+                    cache.clear()
+                    
+                    # Paso 7: Recargar todos los datos
+                    store.notify()
+                    event_manager.notify_all_changes()
+                    
                     QMessageBox.information(
                         dialog,
                         "Restaurado",
-                        "Respaldo restaurado correctamente. Reinicie la aplicación si es necesario."
+                        "Respaldo restaurado correctamente.\nTodos los datos han sido recargados."
                     )
                     update_current_label()
                 except Exception as e:
@@ -345,19 +591,94 @@ class ConfiguracionView(QWidget):
         btn_layout.setSpacing(10)
         
         btn_agregar = QPushButton("Agregar")
-        btn_editar = QPushButton("Editar")
-        btn_eliminar = QPushButton("Eliminar")
-        btn_cerrar = QPushButton("Cerrar")
-
-        btn_agregar.setObjectName("PrimaryButton")
-        btn_editar.setObjectName("ActionButton")
-        btn_eliminar.setObjectName("DangerButton")
-        btn_cerrar.setObjectName("ActionButton")
-        
         btn_agregar.setMinimumHeight(36)
+        btn_agregar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
+        
+        btn_editar = QPushButton("Editar")
         btn_editar.setMinimumHeight(36)
+        btn_editar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
+        btn_eliminar = QPushButton("Eliminar")
         btn_eliminar.setMinimumHeight(36)
+        btn_eliminar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
+        
+        btn_cerrar = QPushButton("Cerrar")
         btn_cerrar.setMinimumHeight(36)
+        btn_cerrar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
 
         btn_agregar.clicked.connect(lambda: self.agregar_trabajador(dialog))
         btn_editar.clicked.connect(lambda: self.editar_trabajador(dialog))
@@ -375,20 +696,31 @@ class ConfiguracionView(QWidget):
         # Cargar trabajadores
         self.cargar_trabajadores_tabla()
         
-        # Conectar evento para recargar en tiempo real
+        # Conectar eventos para recargar en tiempo real
         event_manager.trabajador_changed.connect(self.cargar_trabajadores_tabla)
+        event_manager.data_changed.connect(self.cargar_trabajadores_tabla)
 
         dialog.exec()
+        
+        # Desconectar los eventos cuando se cierra el diálogo
+        try:
+            event_manager.trabajador_changed.disconnect(self.cargar_trabajadores_tabla)
+            event_manager.data_changed.disconnect(self.cargar_trabajadores_tabla)
+        except:
+            pass
 
     def cargar_trabajadores_tabla(self):
-        """Carga los trabajadores en la tabla"""
+        """Carga los trabajadores en la tabla directamente desde la BD"""
         self.table.setRowCount(0)
-        for t in store.trabajadores.values():
+        # Recargar directamente desde la base de datos para asegurar que siempre estén actualizados
+        from app.core.trabajador_db import fetch_all_trabajadores
+        trabajadores = fetch_all_trabajadores()
+        for t in trabajadores:
             row = self.table.rowCount()
             self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(str(t.id)))  # ID
-            self.table.setItem(row, 1, QTableWidgetItem(t.nombre))
-            self.table.setItem(row, 2, QTableWidgetItem(t.numero_identificacion))
+            self.table.setItem(row, 0, QTableWidgetItem(str(t['id'])))  # ID
+            self.table.setItem(row, 1, QTableWidgetItem(t['nombre']))
+            self.table.setItem(row, 2, QTableWidgetItem(t['identificacion']))
 
     def agregar_trabajador(self, parent_dialog):
         """Abre dialog para agregar trabajador"""
@@ -434,8 +766,9 @@ class ConfiguracionView(QWidget):
             QMessageBox.warning(parent_dialog, "Error", "Seleccione un trabajador")
             return
 
-        nombre = self.table.item(row, 0).text()
-        identificacion = self.table.item(row, 1).text()
+        id_trabajador = self.table.item(row, 0).text()
+        nombre = self.table.item(row, 1).text()
+        identificacion = self.table.item(row, 2).text()
         confirm = QMessageBox.question(
             parent_dialog,
             "Confirmar eliminación",
@@ -444,25 +777,21 @@ class ConfiguracionView(QWidget):
         )
 
         if confirm == QMessageBox.Yes:
-            # Buscar el trabajador por identificación
-            trabajador_id = None
-            for trab_id, trab in list(store.trabajadores.items()):
-                if trab.numero_identificacion == identificacion:
-                    trabajador_id = trab_id
-                    break
-            if trabajador_id:
-                # Eliminar de la base de datos
-                delete_trabajador(identificacion)
+            # Usar directamente el ID del trabajador de la columna 0
+            try:
+                delete_trabajador(id_trabajador)
                 # Eliminar del store
-                del store.trabajadores[trabajador_id]
+                if id_trabajador in store.trabajadores:
+                    del store.trabajadores[id_trabajador]
                 # Recargar trabajadores desde la base de datos
                 store.trabajadores.clear()
                 for t in fetch_all_trabajadores():
                     store.trabajadores[t['id']] = Trabajador(id=t['id'], nombre=t['nombre'], numero_identificacion=t['identificacion'])
                 store.notify()
                 self.cargar_trabajadores_tabla()
-            else:
-                QMessageBox.warning(parent_dialog, "Error", "Trabajador no encontrado")
+                QMessageBox.information(parent_dialog, "Éxito", f"Trabajador {nombre} eliminado correctamente")
+            except Exception as e:
+                QMessageBox.critical(parent_dialog, "Error", f"Error al eliminar: {str(e)}")
 
     def abrir_gestor_proveedores(self):
         """Abre ventana para gestionar proveedores"""
@@ -489,19 +818,94 @@ class ConfiguracionView(QWidget):
         btn_layout.setSpacing(10)
         
         btn_agregar = QPushButton("Agregar")
-        btn_editar = QPushButton("Editar")
-        btn_eliminar = QPushButton("Eliminar")
-        btn_cerrar = QPushButton("Cerrar")
-
-        btn_agregar.setObjectName("PrimaryButton")
-        btn_editar.setObjectName("ActionButton")
-        btn_eliminar.setObjectName("DangerButton")
-        btn_cerrar.setObjectName("ActionButton")
-        
         btn_agregar.setMinimumHeight(36)
+        btn_agregar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
+        
+        btn_editar = QPushButton("Editar")
         btn_editar.setMinimumHeight(36)
+        btn_editar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
+        btn_eliminar = QPushButton("Eliminar")
         btn_eliminar.setMinimumHeight(36)
+        btn_eliminar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
+        
+        btn_cerrar = QPushButton("Cerrar")
         btn_cerrar.setMinimumHeight(36)
+        btn_cerrar.setStyleSheet("""
+            QPushButton {
+                min-height: 36px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
 
         btn_agregar.clicked.connect(lambda: self.agregar_proveedor(dialog))
         btn_editar.clicked.connect(lambda: self.editar_proveedor(dialog))
@@ -518,8 +922,17 @@ class ConfiguracionView(QWidget):
 
         # Cargar proveedores
         self.cargar_proveedores_tabla()
+        
+        # Conectar evento para recargar proveedores cuando se restaura un backup
+        event_manager.data_changed.connect(self.cargar_proveedores_tabla)
 
         dialog.exec()
+        
+        # Desconectar el evento cuando se cierra el diálogo
+        try:
+            event_manager.data_changed.disconnect(self.cargar_proveedores_tabla)
+        except:
+            pass
 
     def cargar_proveedores_tabla(self):
         """Carga los proveedores en la tabla desde la base de datos"""
@@ -529,7 +942,8 @@ class ConfiguracionView(QWidget):
         for prov in proveedores_lista:
             row = self.table_prov.rowCount()
             self.table_prov.insertRow(row)
-            self.table_prov.setItem(row, 0, QTableWidgetItem(str(prov['id'])))  # ID
+            display_id = prov['id'] if prov['id'] not in (None, 'None') else ''
+            self.table_prov.setItem(row, 0, QTableWidgetItem(str(display_id)))  # ID
             self.table_prov.setItem(row, 1, QTableWidgetItem(prov['nombre_comercial']))
             self.table_prov.setItem(row, 2, QTableWidgetItem(prov['nombre_fiscal']))
             self.table_prov.setItem(row, 3, QTableWidgetItem(prov['ubicacion']))
@@ -576,7 +990,20 @@ class ConfiguracionView(QWidget):
         if confirm == QMessageBox.Yes:
             if prov_id in store.proveedores:
                 store.delete_proveedor(prov_id)
-                self.cargar_proveedores_tabla()
+            else:
+                # For entries with missing ID values (None/"None"), remove from DB directly
+                from app.core.proveedor_db import delete_proveedor
+                if prov_id in ("", "None"):
+                    from app.core.database import get_connection, return_connection
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM proveedores WHERE id IS NULL OR id = '' OR id = 'None'")
+                    conn.commit()
+                    return_connection(conn)
+                else:
+                    delete_proveedor(prov_id)
+
+            self.cargar_proveedores_tabla()
 
     def limpiar_cache(self):
         """Limpia las entradas expiradas del caché para mejorar el rendimiento"""
@@ -608,5 +1035,65 @@ class ConfiguracionView(QWidget):
                 f"Se limpiaron {cleaned} entradas expiradas del caché.\n"
                 f"El rendimiento del sistema ha mejorado."
             )
+
+    def eliminar_todos_datos(self):
+        """Elimina todos los datos del sistema con confirmación"""
+        reply = QMessageBox.question(
+            self,
+            "⚠️ ELIMINAR TODOS LOS DATOS",
+            "¡ATENCIÓN! Esta acción eliminará PERMANENTEMENTE todos los datos del sistema:\n\n"
+            "• Productos del almacén\n"
+            "• Herramientas\n"
+            "• Entradas y salidas\n"
+            "• Préstamos\n"
+            "• Trabajadores\n"
+            "• Proveedores\n"
+            "• Historial de auditoría\n\n"
+            "Esta acción NO SE PUEDE DESHACER.\n\n"
+            "¿Está completamente seguro de que desea continuar?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No  # Default to No
+        )
+        
+        if reply == QMessageBox.Yes:
+            # Segunda confirmación
+            reply2 = QMessageBox.question(
+                self,
+                "CONFIRMACIÓN FINAL",
+                "Esta es su ÚLTIMA oportunidad para cancelar.\n\n"
+                "¿Realmente desea ELIMINAR TODOS los datos del sistema?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            
+            if reply2 == QMessageBox.Yes:
+                try:
+                    from app.core.database import clear_all_data, reset_connection_pool
+                    from app.core.cache import cache
+                    
+                    # Limpiar todos los datos
+                    clear_all_data()
+                    
+                    # Resetear conexiones y caché
+                    reset_connection_pool()
+                    cache.clear()
+                    
+                    # Recargar store y notificar cambios
+                    store.notify()
+                    event_manager.notify_all_changes()
+                    
+                    QMessageBox.information(
+                        self,
+                        "Datos eliminados",
+                        "Todos los datos del sistema han sido eliminados exitosamente.\n"
+                        "El sistema está ahora en estado inicial."
+                    )
+                    
+                except Exception as e:
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"Error al eliminar los datos: {str(e)}"
+                    )
 
 

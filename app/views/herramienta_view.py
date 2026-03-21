@@ -21,8 +21,71 @@ class HerramientasView(QWidget):
         btns = QHBoxLayout()
 
         self.btn_add = QPushButton("+ Agregar Herramienta")
+        self.btn_add.setMinimumHeight(40)
+        self.btn_add.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
+        
         self.btn_edit = QPushButton("✎ Editar Seleccionado")
+        self.btn_edit.setMinimumHeight(40)
+        self.btn_edit.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
+        
         self.btn_delete = QPushButton("✕ Eliminar Seleccionado")
+        self.btn_delete.setMinimumHeight(40)
+        self.btn_delete.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 100px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
 
         btns.addWidget(self.btn_add)
         btns.addWidget(self.btn_edit)
@@ -44,6 +107,8 @@ class HerramientasView(QWidget):
             4: 80,    # Cantidad
             5: 200    # Observaciones (se estira)
         })
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         layout.addWidget(self.table)
@@ -56,6 +121,16 @@ class HerramientasView(QWidget):
         store.subscribe(self.load_data)
         event_manager.herramienta_changed.connect(self.load_data)
         self.load_data()
+
+    def show_warning(self, title, text):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setWindowModality(Qt.ApplicationModal)
+        msg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        msg.exec()
 
 
     # ---------- DATA ----------
@@ -73,9 +148,10 @@ class HerramientasView(QWidget):
             self.table.setItem(row, 5, QTableWidgetItem(getattr(h, 'observaciones', '')))
 
     def selected_codigo(self):
-        row = self.table.currentRow()
-        if row < 0:
+        selected_rows = self.table.selectionModel().selectedRows()
+        if not selected_rows:
             return None
+        row = selected_rows[0].row()
         return self.table.item(row, 1).text()
 
     # ---------- ACCIONES ----------
@@ -92,7 +168,7 @@ class HerramientasView(QWidget):
         herramientas = store.get_herramientas()
         herramienta = herramientas.get(codigo)
         if not herramienta:
-            QMessageBox.warning(self, "Error", "Herramienta no encontrada")
+            self.show_warning("Error", "Herramienta no encontrada")
             return
         
         dialog = HerramientaDialog(self, herramienta)

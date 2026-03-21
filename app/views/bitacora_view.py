@@ -25,7 +25,49 @@ class BitacoraView(QWidget):
         btn_layout = QHBoxLayout()
 
         self.btn_export = QPushButton("Exportar a Excel")
+        self.btn_export.setMinimumHeight(40)
+        self.btn_export.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 120px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #2563eb;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3b82f6;
+            }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
+        """)
+
         self.btn_clear = QPushButton("Limpiar Bitácora")
+        self.btn_clear.setMinimumHeight(40)
+        self.btn_clear.setStyleSheet("""
+            QPushButton {
+                min-height: 40px;
+                min-width: 120px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                background-color: #161d26;
+                color: #f0f4f8;
+                border: 1px solid #1f2937;
+            }
+            QPushButton:hover {
+                background-color: #1f2937;
+                border-color: #9ca3af;
+            }
+            QPushButton:pressed {
+                background-color: #0f1419;
+            }
+        """)
 
         btn_layout.addWidget(self.btn_export)
         btn_layout.addWidget(self.btn_clear)
