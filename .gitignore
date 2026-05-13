@@ -1,7 +1,25 @@
 # Ignorar archivos compilados de Python
 __pycache__/
 *.pyc
+*.pyo
 
 # Ignorar carpeta de caché y archivos de base de datos
 cache/
 database.db*
+
+# Ignorar carpetas de build y distribución
+build/
+dist/
+installer/
+backups/
+
+# Ignorar archivos compilados y ejecutables
+*.exe
+*.spec
+*.egg-info/
+
+# Ignorar archivos del sistema
+.DS_Store
+.vscode/
+.idea/
+*.log
