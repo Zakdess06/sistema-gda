@@ -11,7 +11,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludedimports=[],
+    excludedimports=['tcl', 'tk', '_tkinter', 'pytz', 'IPython', 'Jupyter', 'tests', 'pytest', 'scipy'],
     noarchive=False,
 )
 

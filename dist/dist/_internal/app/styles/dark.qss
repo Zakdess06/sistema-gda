@@ -150,6 +150,67 @@ QTableWidget::item:hover {
     background-color: #161d26;
 }
 
+/* ===== SCROLLBARS ===== */
+QScrollBar:vertical {
+    width: 12px;
+    background-color: #0a0a0a;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #555;
+    border-radius: 6px;
+    min-height: 20px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #777;
+}
+
+QScrollBar::add-line:vertical {
+    border: none;
+    background: none;
+    height: 0px;
+}
+
+QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    height: 12px;
+    background-color: #0a0a0a;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #555;
+    border-radius: 6px;
+    min-width: 20px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #777;
+}
+
+QScrollBar::add-line:horizontal {
+    border: none;
+    background: none;
+    width: 0px;
+}
+
+QScrollBar::sub-line:horizontal {
+    border: none;
+    background: none;
+    width: 0px;
+}
+
 /* ===== BOTONES PRINCIPALES ===== */
 QPushButton#PrimaryButton {
     min-height: 40px;

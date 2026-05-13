@@ -64,10 +64,20 @@ def enable_dpi_awareness():
     except Exception:
         pass
 
+def configure_windows_scrollbars():
+    """Configure Windows to properly display custom scrollbars"""
+    if sys.platform == 'win32':
+        # Force Windows to use custom scrollbars instead of system theme
+        os.environ['QT_ENABLE_NATIVE_SCROLLBARS'] = '0'
+        os.environ['QT_STYLE_OVERRIDE'] = 'Fusion'
+
 
 def main():
     # Habilitar DPI awareness en Windows ANTES de crear QApplication
     enable_dpi_awareness()
+    
+    # Configure Windows-specific scrollbar settings
+    configure_windows_scrollbars()
     
     # Set high DPI policy BEFORE creating QApplication
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

@@ -1,6 +1,11 @@
-# Archivo de dependencias (requeriments.txt)
-# Para instalar: `pip install -r requeriments.txt`
+# Archivo de dependencias (requirements.txt)
+# Para instalar: `pip install -r requirements.txt`
 
-PySide6>=6.5
-openpyxl
-matplotlib>=3.5.0
+# Interfaz gráfica
+PySide6==6.7.0
+
+# Exportación a Excel
+openpyxl==3.11.0
+
+# Gráficos y visualizaciones
+matplotlib==3.8.0

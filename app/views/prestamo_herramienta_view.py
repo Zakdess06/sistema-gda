@@ -175,7 +175,24 @@ class PrestamoHerramientaView(QWidget):
         self.date_regreso_estimada = QDateTimeEdit()
         self.date_regreso_estimada.setDateTime(QDateTime.currentDateTime())
         self.date_regreso_estimada.setDisplayFormat("yyyy-MM-dd")
+        self.date_regreso_estimada.setCalendarPopup(True)
         self.date_regreso_estimada.setMinimumHeight(36)
+        self.date_regreso_estimada.setMinimumWidth(150)
+        self.date_regreso_estimada.setStyleSheet("""
+            QDateTimeEdit {
+                padding: 6px;
+                border: 1px solid #3f3f3f;
+                border-radius: 4px;
+                background-color: #1a1a1a;
+                color: #ffffff;
+            }
+            QDateTimeEdit::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 20px;
+                border-left: 1px solid #3f3f3f;
+            }
+        """)
         h_layout6.addWidget(self.date_regreso_estimada, 1)
         main_layout.addLayout(h_layout6)
         main_layout.addSpacing(10)
